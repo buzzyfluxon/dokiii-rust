@@ -1,0 +1,106 @@
+use std::sync::atomic::Ordering;
+use std::time::{Duration, Instant};
+
+use serde::Serialize;
+use tauri::{AppHandle, Emitter, Manager};
+
+use crate::state::AppState;
+
+#[derive(Clone, Serialize)]
+struct CursorPayload {
+    x: f64,
+    y: f64,
+}
+
+#[cfg(windows)]
+fn cursor_position() -> Option<(i32, i32)> {
+    use windows::Win32::Foundation::POINT;
+    use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
+
+    let mut point = POINT::default();
+    unsafe { GetCursorPos(&mut point).ok().map(|_| (point.x, point.y)) }
+}
+
+#[cfg(not(windows))]
+fn cursor_position() -> Option<(i32, i32)> {
+    None
+}
+
+#[cfg(windows)]
+fn primary_button_down() -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
+
+    unsafe { (GetAsyncKeyState(VK_LBUTTON.0 as i32) as u16 & 0x8000) != 0 }
+}
+
+#[cfg(not(windows))]
+fn primary_button_down() -> bool {
+    false
+}
+
+pub fn start(app: AppHandle) {
+    let _ = std::thread::Builder::new()
+        .name("dokiii-cursor".into())
+        .spawn(move || run(app));
+}
+
+fn run(app: AppHandle) {
+    let mut last = (i32::MIN, i32::MIN);
+    let mut last_move = Instant::now();
+    let mut capturing: Option<bool> = None;
+
+    loop {
+        let idle = last_move.elapsed() > Duration::from_millis(1500);
+        std::thread::sleep(Duration::from_millis(if idle { 50 } else { 16 }));
+
+        let window = match app.get_webview_window("main") {
+            Some(window) => window,
+            None => continue,
+        };
+        if !window.is_visible().unwrap_or(false) {
+            continue;
+        }
+        let (cx, cy) = match cursor_position() {
+            Some(point) => point,
+            None => continue,
+        };
+        let (position, size, scale) = match (
+            window.outer_position(),
+            window.inner_size(),
+            window.scale_factor(),
+        ) {
+            (Ok(position), Ok(size), Ok(scale)) => (position, size, scale),
+            _ => continue,
+        };
+
+        let inside = cx >= position.x
+            && cy >= position.y
+            && cx < position.x + size.width as i32
+            && cy < position.y + size.height as i32;
+        let state = app.state::<AppState>();
+
+        if (cx, cy) != last {
+            last = (cx, cy);
+            last_move = Instant::now();
+            if inside {
+                let payload = CursorPayload {
+                    x: (cx - position.x) as f64 / scale,
+                    y: (cy - position.y) as f64 / scale,
+                };
+                let _ = window.emit("dokiii://cursor", payload);
+            } else {
+                state.js_hit.store(false, Ordering::Relaxed);
+            }
+        }
+
+        let capture_all = state.modal.load(Ordering::Relaxed) || state.popover.load(Ordering::Relaxed);
+        let wanted = capture_all || (inside && state.js_hit.load(Ordering::Relaxed));
+        let holding = capturing == Some(true) && primary_button_down();
+        let next = holding || wanted;
+
+        if capturing != Some(next) {
+            capturing = Some(next);
+            let _ = window.set_ignore_cursor_events(!next);
+        }
+    }
+}
