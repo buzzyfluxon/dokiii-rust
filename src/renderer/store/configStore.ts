@@ -53,6 +53,7 @@ interface ConfigState {
   reorderPinnedApps: (apps: DockAppItem[]) => void;
   addDesktopWidget: (type: DesktopWidgetType, size?: DesktopWidgetSize) => boolean;
   removeDesktopWidget: (id: string) => void;
+  resetDesktopWidgetPosition: (id: string) => boolean;
   updateDesktopWidgetPos: (id: string, x: number, y: number) => void;
   setDesktopWidgetSize: (id: string, size: DesktopWidgetSize) => boolean;
   updateDesktopWidgetData: (id: string, data: Partial<DesktopWidgetItem>) => void;
@@ -198,6 +199,28 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     const current = get().dock.desktopWidgets || [];
     const updated = current.filter((w) => w.id !== id);
     get().updateConfig({ desktopWidgets: updated });
+  },
+  resetDesktopWidgetPosition: (id) => {
+    const { dock } = get();
+    const current = dock.desktopWidgets || [];
+    const target = current.find((w) => w.id === id);
+    if (!target) return false;
+    const winW = window.innerWidth || 1920;
+    const winH = window.innerHeight || 1080;
+    const reserved = dock.autoHide
+      ? null
+      : getDockReservedRect(dock.position || 'bottom', dock.size || 64, winW, winH);
+    const customDims = target.width && target.height ? { width: target.width, height: target.height } : undefined;
+    const others = current.filter((w) => w.id !== id);
+    const spot = findFreeSpot(others, target.size, winW, winH, reserved, customDims);
+    if (!spot) {
+      get().showNotice("No free space on the desktop. Move or remove a widget first.");
+      return false;
+    }
+    get().updateConfig({
+      desktopWidgets: current.map((w) => (w.id === id ? { ...w, x: spot.x, y: spot.y } : w)),
+    });
+    return true;
   },
   updateDesktopWidgetPos: (id, x, y) => {
     const current = get().dock.desktopWidgets || [];

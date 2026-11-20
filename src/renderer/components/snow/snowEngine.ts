@@ -12,14 +12,20 @@ export interface SnowSettings {
 const COL = 4;
 const GRAVITY = 1500;
 const TAU = Math.PI * 2;
-const MAX_FLAKES = 200;
-const FLAKES_BY_INTENSITY: Record<SnowIntensity, number> = { low: 70, medium: 120, high: 190 };
-const LAYER_SIZE = [1.3, 2.1, 3.1];
-const LAYER_SPEED = [36, 60, 90];
+const MAX_FLAKES = 340;
+const MAX_BITS = 90;
+const FLAKES_BY_INTENSITY: Record<SnowIntensity, number> = { low: 110, medium: 200, high: 320 };
+const LAYER_SIZE = [1.6, 2.6, 4];
+const LAYER_SPEED = [34, 58, 86];
 const LAYER_SWAY = [9, 15, 22];
-const LAYER_ALPHA = [0.55, 0.78, 0.96];
-const DEPOSIT_PROFILE = [3.4, 2.7, 1.7, 0.85, 0.35];
+const LAYER_ALPHA = [0.6, 0.82, 1];
+const DEPOSIT_PROFILE = [4.6, 3.6, 2.3, 1.15, 0.5];
+const MAX_SLOPE = 2.4;
+const EDGE_LIMIT = 3.6;
+const BIT_GRAVITY = 720;
+const SCOOP_DISTANCE = 240;
 const MAX_BALLS = 5;
+const MAX_BALLS_TOTAL = 8;
 const MAX_SNOWMEN = 3;
 const FRAME_MIN_MS = 15;
 
@@ -48,6 +54,8 @@ interface Surface {
   seen: number;
   isDock: boolean;
   el: HTMLElement | null;
+  spillLeft: number;
+  spillRight: number;
 }
 
 interface DragState {
@@ -108,8 +116,36 @@ export class SnowEngine {
   private fy = new Float32Array(MAX_FLAKES);
   private fp = new Float32Array(MAX_FLAKES);
   private fv = new Float32Array(MAX_FLAKES);
+  private fvx = new Float32Array(MAX_FLAKES);
+  private fvy = new Float32Array(MAX_FLAKES);
   private fl = new Uint8Array(MAX_FLAKES);
   private flakeCount = 0;
+
+  private bx = new Float32Array(MAX_BITS);
+  private by = new Float32Array(MAX_BITS);
+  private bvx = new Float32Array(MAX_BITS);
+  private bvy = new Float32Array(MAX_BITS);
+  private bs = new Float32Array(MAX_BITS);
+  private bm = new Float32Array(MAX_BITS);
+  private bitCount = 0;
+
+  private sprites: (HTMLCanvasElement | null)[] = [];
+  private spriteSize: number[] = [];
+
+  private cursorX = 0;
+  private cursorY = 0;
+  private lastCx = 0;
+  private lastCy = 0;
+  private cursorDirty = false;
+  private scoopDist = 0;
+  private scoopCool = 0;
+  private cursorHandler = (e: Event) => {
+    const detail = (e as CustomEvent).detail;
+    if (!detail) return;
+    this.cursorX = detail.x;
+    this.cursorY = detail.y;
+    this.cursorDirty = true;
+  };
 
   private ground: Surface | null = null;
   private domSurfaces = new Map<HTMLElement, Surface>();
@@ -138,6 +174,7 @@ export class SnowEngine {
     this.resize();
     for (const b of this.bodies) container.appendChild(b.el);
     window.addEventListener('resize', this.resizeHandler);
+    window.addEventListener('dokiii:cursor', this.cursorHandler);
     document.addEventListener('visibilitychange', this.visibilityHandler);
     this.unsubscribe =
       window.electronAPI?.onSnowDesktopState?.((state) => this.applyDesktopState(state)) || null;
@@ -148,6 +185,7 @@ export class SnowEngine {
   detach() {
     this.stopLoop();
     window.removeEventListener('resize', this.resizeHandler);
+    window.removeEventListener('dokiii:cursor', this.cursorHandler);
     document.removeEventListener('visibilitychange', this.visibilityHandler);
     this.unsubscribe?.();
     this.unsubscribe = null;
@@ -187,7 +225,7 @@ export class SnowEngine {
         seen.add(e.id);
         let s = this.winSurfaces.get(e.id);
         if (!s) {
-          s = this.makeSurface(`win:${e.id}`, 'win', 8);
+          s = this.makeSurface(`win:${e.id}`, 'win', 10);
           s.x1 = e.x;
           s.x2 = e.x + e.w;
           s.y = e.y;
@@ -305,12 +343,14 @@ export class SnowEngine {
       seen: 0,
       isDock: false,
       el: null,
+      spillLeft: 0,
+      spillRight: 0,
     };
   }
 
   private ensureGround() {
     if (!this.ground) {
-      this.ground = this.makeSurface('ground', 'ground', 5);
+      this.ground = this.makeSurface('ground', 'ground', 8);
     }
     const g = this.ground;
     g.x1 = g.tx1 = 0;
@@ -364,27 +404,124 @@ export class SnowEngine {
     return false;
   }
 
-  private deposit(s: Surface, x: number) {
+  private deposit(s: Surface, x: number, scale = 1) {
     const idx = Math.round((x - s.x1) / COL);
     const p = s.pile;
     for (let k = -4; k <= 4; k++) {
       const i = idx + k;
       if (i < 0 || i >= p.length) continue;
-      const v = DEPOSIT_PROFILE[Math.abs(k)];
-      p[i] += v * Math.max(0, 1 - p[i] / s.maxH);
+      const v = DEPOSIT_PROFILE[Math.abs(k)] * scale;
+      const cap = s.maxH * this.capShape(i, p.length);
+      p[i] += v * Math.max(0, 1 - p[i] / cap);
     }
+  }
+
+  private capShape(i: number, len: number): number {
+    const dome = Math.pow(Math.sin((Math.PI * (i + 0.5)) / len), 0.7);
+    return Math.max(0.2, 0.45 + 0.55 * dome + 0.07 * Math.sin(i * 0.37));
+  }
+
+  private carve(s: Surface, x: number, r: number) {
+    const idx = Math.round((x - s.x1) / COL);
+    const reach = Math.ceil((r * 1.6) / COL);
+    const p = s.pile;
+    for (let k = -reach; k <= reach; k++) {
+      const i = idx + k;
+      if (i < 0 || i >= p.length) continue;
+      const fall = 1 - Math.abs(k) / (reach + 1);
+      p[i] = Math.max(0, p[i] - r * 0.55 * fall * fall);
+    }
+  }
+
+  private emitBit(x: number, y: number, vx: number, vy: number, size: number, mass: number) {
+    if (this.bitCount >= MAX_BITS) return;
+    const i = this.bitCount++;
+    this.bx[i] = x;
+    this.by[i] = y;
+    this.bvx[i] = vx;
+    this.bvy[i] = vy;
+    this.bs[i] = size;
+    this.bm[i] = mass;
+  }
+
+  private removeBit(i: number) {
+    const last = --this.bitCount;
+    if (i === last) return;
+    this.bx[i] = this.bx[last];
+    this.by[i] = this.by[last];
+    this.bvx[i] = this.bvx[last];
+    this.bvy[i] = this.bvy[last];
+    this.bs[i] = this.bs[last];
+    this.bm[i] = this.bm[last];
+  }
+
+  private spill(s: Surface, column: number, x: number, dir: number) {
+    const p = s.pile;
+    if (column < 0 || column >= p.length) return;
+    const excess = p[column] - EDGE_LIMIT;
+    if (excess < 0.7) return;
+    const taken = excess * 0.4;
+    p[column] -= taken;
+    if (column - dir >= 0 && column - dir < p.length) p[column - dir] -= taken * 0.25;
+    const top = s.y - Math.min(p[column], EDGE_LIMIT + 2);
+    const size = Math.min(3.4, 1.6 + taken * 0.8);
+    this.emitBit(x + dir * 2, top, dir * rand(24, 70), rand(0, 40), size, Math.min(1.2, 0.25 + taken * 0.8));
   }
 
   private relax(s: Surface) {
     const p = s.pile;
-    let peak = 0;
-    for (let i = 1; i < p.length - 1; i++) {
-      p[i] += (p[i - 1] + p[i + 1] - 2 * p[i]) * 0.18;
+    const n = p.length;
+    for (let i = 0; i < n - 1; i++) {
+      const d = p[i] - p[i + 1];
+      if (d > MAX_SLOPE) {
+        const t = (d - MAX_SLOPE) * 0.5;
+        p[i] -= t;
+        p[i + 1] += t;
+      } else if (d < -MAX_SLOPE) {
+        const t = (-d - MAX_SLOPE) * 0.5;
+        p[i] += t;
+        p[i + 1] -= t;
+      }
     }
-    for (let i = 0; i < p.length; i++) {
+    for (let i = n - 2; i >= 0; i--) {
+      const d = p[i] - p[i + 1];
+      if (d > MAX_SLOPE) {
+        const t = (d - MAX_SLOPE) * 0.5;
+        p[i] -= t;
+        p[i + 1] += t;
+      } else if (d < -MAX_SLOPE) {
+        const t = (-d - MAX_SLOPE) * 0.5;
+        p[i] += t;
+        p[i + 1] -= t;
+      }
+    }
+    for (let i = 1; i < n - 1; i++) {
+      p[i] += (p[i - 1] + p[i + 1] - 2 * p[i]) * 0.08;
+    }
+    let peak = 0;
+    for (let i = 0; i < n; i++) {
       if (p[i] > peak) peak = p[i];
     }
     s.peak = peak;
+
+    if (s.kind === 'ground' || s.fade < 0.6) return;
+    for (let k = 0; k < s.spans.length; k++) {
+      const sp = s.spans[k];
+      if (this.frame >= s.spillLeft) {
+        const column = Math.round(sp.lo / COL);
+        if (p[column] - EDGE_LIMIT >= 0.7) {
+          this.spill(s, column, s.x1 + sp.lo, -1);
+          s.spillLeft = this.frame + 10 + Math.floor(Math.random() * 14);
+        }
+      }
+      if (this.frame >= s.spillRight) {
+        const column = Math.round(sp.hi / COL);
+        if (p[column] - EDGE_LIMIT >= 0.7) {
+          this.spill(s, column, s.x1 + sp.hi, 1);
+          s.spillRight = this.frame + 10 + Math.floor(Math.random() * 14);
+        }
+      }
+    }
   }
 
   private spawnFlake(i: number, initial: boolean) {
@@ -394,6 +531,8 @@ export class SnowEngine {
     this.fy[i] = initial ? Math.random() * this.height : -6 - Math.random() * 60;
     this.fp[i] = Math.random() * TAU;
     this.fv[i] = LAYER_SPEED[layer] * rand(0.85, 1.2);
+    this.fvy[i] = initial ? this.fv[i] * 0.8 : this.fv[i] * 0.15;
+    this.fvx[i] = 0;
   }
 
   private refreshDomList() {
@@ -413,7 +552,7 @@ export class SnowEngine {
       let s = this.domSurfaces.get(el);
       const isDock = el.classList.contains('dock-container');
       if (!s) {
-        s = this.makeSurface('dom', 'dom', isDock ? 10 : 9);
+        s = this.makeSurface('dom', 'dom', isDock ? 14 : 12);
         s.isDock = isDock;
         s.el = el;
         s.fade = 0;
@@ -478,29 +617,23 @@ export class SnowEngine {
     for (const s of this.winSurfaces.values()) s.fade += (s.fadeTarget - s.fade) * Math.min(1, dt * 6);
     this.collectActive();
 
-    const wind = Math.sin(this.time * 0.13) * 10;
+    const t = this.time;
+    const gust = Math.sin(t * 0.13) * 8 + Math.sin(t * 0.37 + 1.3) * 5 + Math.sin(t * 0.91 + 0.4) * 2.5;
     const n = Math.min(this.flakeCount, MAX_FLAKES);
     const surfaces = this.active;
+    const vyEase = Math.min(1, dt * 1.6);
+    const vxEase = Math.min(1, dt * 2.2);
     for (let i = 0; i < n; i++) {
       const layer = this.fl[i];
       const prevY = this.fy[i];
-      const newY = prevY + this.fv[i] * dt;
-      const x =
-        this.fx[i] +
-        (Math.sin(this.time * 0.9 + this.fp[i]) * LAYER_SWAY[layer] * 0.6 + wind * (0.4 + layer * 0.3)) * dt;
+      this.fvy[i] += (this.fv[i] - this.fvy[i]) * vyEase;
+      const targetVx = gust * (0.5 + layer * 0.35) + Math.sin(t * 0.9 + this.fp[i]) * LAYER_SWAY[layer] * 0.7;
+      this.fvx[i] += (targetVx - this.fvx[i]) * vxEase;
+      const newY = prevY + this.fvy[i] * dt;
+      const x = this.fx[i] + this.fvx[i] * dt;
       this.fx[i] = x;
       this.fy[i] = newY;
-      let hit: Surface | null = null;
-      let hitTop = Infinity;
-      for (let j = 0; j < surfaces.length; j++) {
-        const s = surfaces[j];
-        const top = this.topAt(s, x);
-        if (top === null) continue;
-        if (prevY < top && newY >= top && top < hitTop) {
-          hitTop = top;
-          hit = s;
-        }
-      }
+      const hit = this.findHit(x, prevY, newY);
       if (hit) {
         this.deposit(hit, x);
         this.spawnFlake(i, false);
@@ -509,13 +642,94 @@ export class SnowEngine {
       if (newY > this.height + 8 || x < -20 || x > this.width + 20) this.spawnFlake(i, false);
     }
 
+    for (let i = 0; i < this.bitCount; ) {
+      const prevY = this.by[i];
+      this.bvy[i] += BIT_GRAVITY * dt;
+      this.bvx[i] *= Math.pow(0.5, dt);
+      const newY = prevY + this.bvy[i] * dt;
+      const x = this.bx[i] + this.bvx[i] * dt;
+      const hit = this.findHit(x, prevY, newY);
+      if (hit) {
+        this.deposit(hit, x, this.bm[i]);
+        this.removeBit(i);
+        continue;
+      }
+      if (newY > this.height + 8 || x < -20 || x > this.width + 20) {
+        this.removeBit(i);
+        continue;
+      }
+      this.bx[i] = x;
+      this.by[i] = newY;
+      i++;
+    }
+
     this.relaxTick++;
     if (this.relaxTick % 2 === 0) {
       for (let j = 0; j < surfaces.length; j++) this.relax(surfaces[j]);
     }
 
+    this.scoop(dt);
     this.stepBodies(dt);
     this.maybeSpawnBall(dt);
+  }
+
+  private findHit(x: number, prevY: number, newY: number): Surface | null {
+    const surfaces = this.active;
+    let hit: Surface | null = null;
+    let hitTop = Infinity;
+    for (let j = 0; j < surfaces.length; j++) {
+      const s = surfaces[j];
+      const top = this.topAt(s, x);
+      if (top === null) continue;
+      if (prevY < top && newY >= top && top < hitTop) {
+        hitTop = top;
+        hit = s;
+      }
+    }
+    return hit;
+  }
+
+  private scoop(dt: number) {
+    this.scoopCool = Math.max(0, this.scoopCool - dt);
+    if (!this.settings.snowballs) return;
+    if (!this.cursorDirty) {
+      this.scoopDist = Math.max(0, this.scoopDist - dt * 60);
+      return;
+    }
+    this.cursorDirty = false;
+    const x = this.cursorX;
+    const y = this.cursorY;
+    const moved = Math.min(160, Math.hypot(x - this.lastCx, y - this.lastCy));
+    this.lastCx = x;
+    this.lastCy = y;
+    if (moved < 0.5) return;
+    for (const b of this.bodies) {
+      if (Math.abs(x - b.x) < b.w / 2 + 4 && y > b.by - b.h - 4 && y < b.by + 4) return;
+    }
+    let target: Surface | null = null;
+    for (const s of this.active) {
+      if (!this.spanAt(s, x)) continue;
+      const h = this.heightAt(s, x);
+      if (h < 4) continue;
+      if (y >= s.y - h - 12 && y <= s.y + 8) {
+        target = s;
+        break;
+      }
+    }
+    if (!target) {
+      this.scoopDist = Math.max(0, this.scoopDist - moved * 0.6);
+      return;
+    }
+    this.scoopDist += moved;
+    if (this.scoopDist < SCOOP_DISTANCE || this.scoopCool > 0) return;
+    if (this.bodies.length >= MAX_BALLS_TOTAL) return;
+    const h = this.heightAt(target, x);
+    const r = Math.max(11, Math.min(19, 8 + h * 0.75));
+    this.carve(target, x, r);
+    const top = this.topAt(target, x);
+    this.createBall(x, top === null ? target.y : top, r, 0);
+    this.scoopDist = 0;
+    this.scoopCool = 1.6;
   }
 
   private supportFor(b: Body, prevBy: number): { y: number; ball: Body | null; slide: number } {
@@ -977,21 +1191,63 @@ export class SnowEngine {
     if (!ctx) return;
     ctx.clearRect(0, 0, this.width, this.height);
     const n = Math.min(this.flakeCount, MAX_FLAKES);
+    this.ensureSprites();
     for (let layer = 0; layer < 3; layer++) {
-      ctx.fillStyle = `rgba(255,255,255,${LAYER_ALPHA[layer]})`;
+      const sprite = this.sprites[layer];
+      ctx.globalAlpha = LAYER_ALPHA[layer];
+      if (sprite) {
+        const d = this.spriteSize[layer];
+        for (let i = 0; i < n; i++) {
+          if (this.fl[i] !== layer) continue;
+          ctx.drawImage(sprite, this.fx[i] - d / 2, this.fy[i] - d / 2);
+        }
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,1)';
+        ctx.beginPath();
+        const size = LAYER_SIZE[layer];
+        for (let i = 0; i < n; i++) {
+          if (this.fl[i] !== layer) continue;
+          ctx.moveTo(this.fx[i] + size, this.fy[i]);
+          ctx.arc(this.fx[i], this.fy[i], size, 0, TAU);
+        }
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    if (this.bitCount > 0) {
+      ctx.fillStyle = 'rgba(248,251,255,0.96)';
       ctx.beginPath();
-      const size = LAYER_SIZE[layer];
-      for (let i = 0; i < n; i++) {
-        if (this.fl[i] !== layer) continue;
-        const x = this.fx[i];
-        const y = this.fy[i];
-        ctx.moveTo(x + size, y);
-        ctx.arc(x, y, size, 0, TAU);
+      for (let i = 0; i < this.bitCount; i++) {
+        ctx.moveTo(this.bx[i] + this.bs[i], this.by[i]);
+        ctx.arc(this.bx[i], this.by[i], this.bs[i], 0, TAU);
       }
       ctx.fill();
     }
     for (const s of this.active) this.drawPile(ctx, s);
     this.updateBodies();
+  }
+
+  private ensureSprites() {
+    if (this.sprites.length) return;
+    for (let layer = 0; layer < 3; layer++) {
+      const d = Math.ceil(LAYER_SIZE[layer] * 2 * 1.8);
+      this.spriteSize.push(d);
+      const canvas = document.createElement('canvas');
+      canvas.width = d;
+      canvas.height = d;
+      const g = canvas.getContext ? canvas.getContext('2d') : null;
+      if (!g) {
+        this.sprites.push(null);
+        continue;
+      }
+      const grad = g.createRadialGradient(d / 2, d / 2, 0, d / 2, d / 2, d / 2);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.35, 'rgba(255,255,255,0.85)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, d, d);
+      this.sprites.push(canvas);
+    }
   }
 
   private tracePile(ctx: CanvasRenderingContext2D, s: Surface, lo: number, hi: number, lift: number) {

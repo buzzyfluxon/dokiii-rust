@@ -7,42 +7,11 @@ import {
   DEFAULT_DESKTOP_WIDGETS,
   DESKTOP_WIDGET_SIZES,
 } from '../../../shared/constants';
-import { WorldClockWidget } from './WorldClockWidget';
-import { DateDayWidget } from './DateDayWidget';
-import { SystemControlsWidget } from './SystemControlsWidget';
-import { SystemMonitorWidget } from './SystemMonitorWidget';
-import { BatteryWidget } from './BatteryWidget';
-import { AnalogClockWidget } from './AnalogClockWidget';
-import { CalendarMonthWidget } from './CalendarMonthWidget';
-import { MoonPhaseWidget } from './MoonPhaseWidget';
-import { CustomTextWidget } from './CustomTextWidget';
-import { QuoteCardWidget } from './QuoteCardWidget';
-import { CountdownWidget } from './CountdownWidget';
-import { GoalsWidget } from './GoalsWidget';
-import { CarCardWidget } from './CarCardWidget';
-import { TravelCardWidget } from './TravelCardWidget';
-import { BookCardWidget } from './BookCardWidget';
-import { MovieCardWidget } from './MovieCardWidget';
-import { PolaroidWidget } from './PolaroidWidget';
-import { GalleryWidget } from './GalleryWidget';
-import { MoodBoardWidget } from './MoodBoardWidget';
-import { WeatherWidget } from './WeatherWidget';
-import { BigDateWidget } from './BigDateWidget';
-import { DigitalClockWidget } from './DigitalClockWidget';
-import { PhotoCardWidget } from './PhotoCardWidget';
-import { MusicCardWidget } from './MusicCardWidget';
-import { AppIconWidget } from './AppIconWidget';
 import { Rect, findFreeSpot, getDockReservedRect, rectsOverlap, resolveWidgetRect } from '../../utils/widgetPlacement';
+import { renderDesktopWidgetContent } from './renderWidgetContent';
+import { BASE_SIZE, FILL_TYPES, BARE_TYPES, widgetBackground } from '../../utils/widgetSurface';
 import './desktop-widgets.css';
 
-const BASE_SIZE: Record<DesktopWidgetSize, { width: number; height: number; padding: number }> = {
-  small: { ...DESKTOP_WIDGET_SIZES.small, padding: 14 },
-  medium: { ...DESKTOP_WIDGET_SIZES.medium, padding: 16 },
-  large: { ...DESKTOP_WIDGET_SIZES.large, padding: 18 },
-};
-
-const FILL_TYPES = new Set<string>(['weather', 'big-date', 'digital-clock', 'photo-card', 'music-card', 'app-icon']);
-const BARE_TYPES = new Set<string>(['app-icon']);
 const TAP_DISTANCE = 5;
 const DOUBLE_TAP_MS = 380;
 
@@ -460,136 +429,6 @@ export const DesktopWidgetsLayer: React.FC = () => {
     }
   };
 
-  const renderWidgetContent = (item: DesktopWidgetItem, dims: { width: number; height: number }) => {
-    switch (item.type) {
-      case 'weather':
-        return <WeatherWidget width={dims.width} height={dims.height} city={item.customTitle} />;
-      case 'big-date':
-        return <BigDateWidget width={dims.width} height={dims.height} />;
-      case 'digital-clock':
-        return (
-          <DigitalClockWidget
-            width={dims.width}
-            height={dims.height}
-            label={item.customTitle}
-            timezone={item.data?.timezone}
-          />
-        );
-      case 'photo-card':
-        return <PhotoCardWidget width={dims.width} height={dims.height} data={item.data} />;
-      case 'music-card':
-        return <MusicCardWidget width={dims.width} height={dims.height} data={item.data} />;
-      case 'app-icon':
-        return <AppIconWidget width={dims.width} height={dims.height} label={item.customTitle} data={item.data} />;
-      case 'world-clock':
-        return <WorldClockWidget size={item.size} customTitle={item.customTitle} city={item.city} />;
-      case 'date-day':
-        return <DateDayWidget size={item.size} customTitle={item.customTitle} />;
-      case 'system-controls':
-        return <SystemControlsWidget size={item.size} />;
-      case 'system-monitor':
-        return <SystemMonitorWidget size={item.size} />;
-      case 'battery':
-        return <BatteryWidget size={item.size} />;
-      case 'analog-clock':
-        return <AnalogClockWidget size={item.size} />;
-      case 'calendar':
-        return <CalendarMonthWidget size={item.size} />;
-      case 'moon-phase':
-        return <MoonPhaseWidget size={item.size} />;
-      case 'custom-text':
-        return (
-          <CustomTextWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'quote-card':
-        return (
-          <QuoteCardWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'countdown':
-        return (
-          <CountdownWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'goals':
-        return (
-          <GoalsWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'car-card':
-        return (
-          <CarCardWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'travel-card':
-        return (
-          <TravelCardWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'book-card':
-        return (
-          <BookCardWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'movie-card':
-        return (
-          <MovieCardWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'polaroid':
-        return (
-          <PolaroidWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'gallery':
-        return (
-          <GalleryWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      case 'mood-board':
-        return (
-          <MoodBoardWidget
-            size={item.size}
-            data={item.data}
-            onUpdateData={(patch) => updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
   if (!isVisible) return null;
 
   return (
@@ -610,6 +449,13 @@ export const DesktopWidgetsLayer: React.FC = () => {
         const isResizing = activeResize?.id === item.id;
         const isFill = FILL_TYPES.has(item.type);
         const isBare = BARE_TYPES.has(item.type);
+        const surfaceBackground = isBare
+          ? undefined
+          : widgetBackground(
+              item.type,
+              item.transparency,
+              isLiquidGlass && desktopSample ? desktopSample.bgRgba : undefined
+            );
 
         return (
           <div
@@ -631,6 +477,7 @@ export const DesktopWidgetsLayer: React.FC = () => {
                     boxShadow: isDragging ? undefined : desktopSample.boxShadow,
                   }
                 : {}),
+              ...(surfaceBackground ? { background: surfaceBackground } : {}),
             }}
             onPointerDown={(e) => handlePointerDown(item.id, e)}
             onPointerMove={handlePointerMove}
@@ -663,7 +510,9 @@ export const DesktopWidgetsLayer: React.FC = () => {
                     }
               }
             >
-              {renderWidgetContent(item, dims)}
+              {renderDesktopWidgetContent(item, dims, (patch) =>
+                updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), ...patch } })
+              )}
             </div>
             {!item.locked &&
               item.type !== 'app-icon' &&

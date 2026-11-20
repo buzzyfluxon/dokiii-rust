@@ -101,6 +101,7 @@ export interface DesktopWidgetItem {
   city?: string;
   pinned?: boolean;
   locked?: boolean;
+  transparency?: number;
   data?: Record<string, any>;
 }
 

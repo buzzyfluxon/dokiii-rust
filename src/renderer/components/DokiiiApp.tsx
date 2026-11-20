@@ -4,14 +4,12 @@ import { useWidgetStore } from '../store/widgetStore';
 import { useLiquidGlassStore } from '../store/liquidGlassStore';
 import { useUpdaterStore } from '../store/updaterStore';
 import {
-  WIDGET_REGISTRY,
-  WIDGET_CATEGORIES,
-  WidgetId,
   DesktopWidgetType,
   DesktopWidgetSize,
   DEFAULT_SNOW_CONFIG,
 } from '../../shared/constants';
 import { IconClose, IconMinus, IconMaximize, IconRestore, IconRefresh } from './Icons';
+import { WidgetLibraryView } from './library/WidgetLibraryView';
 import appIcon from '../assets/icon.png';
 import './dokiii-app.css';
 
@@ -38,7 +36,7 @@ export const DokiiiApp: React.FC = () => {
     setLaunchOnStartup,
   } = useConfigStore();
 
-  const { enabledWidgets, toggleWidget } = useWidgetStore();
+  const { enabledWidgets } = useWidgetStore();
   const isLiquidGlass = Boolean(dock.liquidGlassEnabled);
   const modalSample = useLiquidGlassStore((s) => s.getModalSample());
   const updater = useUpdaterStore((s) => s.updater);
@@ -222,51 +220,7 @@ export const DokiiiApp: React.FC = () => {
     </div>
   );
 
-  const renderLibraryTab = () => (
-    <div className="dokiii-content-body">
-      {WIDGET_CATEGORIES.map((cat) => {
-        const catWidgets = WIDGET_REGISTRY.filter((w) => w.category === cat.id);
-        if (catWidgets.length === 0) return null;
-
-        return (
-          <div key={cat.id} className="dokiii-card">
-            <span className="dokiii-card-title">{cat.label}</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {catWidgets.map((w) => {
-                const isDockEnabled = enabledWidgets.includes(w.id);
-
-                return (
-                  <div key={w.id} className="dokiii-row">
-                    <div className="dokiii-row-label">
-                      <span className="dokiii-row-name">{w.name}</span>
-                      <span className="dokiii-row-desc">{w.description}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {w.placement === 'desktop' ? (
-                        <button
-                          className="dokiii-btn secondary"
-                          onClick={() => addDesktopWidget(w.id as DesktopWidgetType, 'small')}
-                        >
-                          + Desktop
-                        </button>
-                      ) : (
-                        <button
-                          className={`dokiii-btn ${isDockEnabled ? 'danger' : 'primary'}`}
-                          onClick={() => toggleWidget(w.id)}
-                        >
-                          {isDockEnabled ? 'Remove Dock' : '+ Dock'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+  const renderLibraryTab = () => <WidgetLibraryView />;
 
   const renderProfilesTab = () => (
     <div className="dokiii-content-body">

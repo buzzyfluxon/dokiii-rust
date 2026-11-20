@@ -123,6 +123,7 @@ export function installTauriBridge(): boolean {
 
   let lastHit = false;
   subscribe<CursorPayload>('dokiii://cursor', ({ x, y }) => {
+    window.dispatchEvent(new CustomEvent('dokiii:cursor', { detail: { x, y } }));
     const hit = isInteractive(x, y);
     if (hit === lastHit) return;
     lastHit = hit;
