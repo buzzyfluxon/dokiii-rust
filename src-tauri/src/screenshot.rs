@@ -198,10 +198,14 @@ pub async fn capture_screenshot(mode: String) -> String {
             capture_full()
         };
         match captured {
-            Some((pixels, width, height)) if save_png(&path, pixels, width, height) => {
-                path.to_string_lossy().to_string()
+            Some((pixels, width, height)) => {
+                if save_png(&path, pixels, width, height) {
+                    path.to_string_lossy().to_string()
+                } else {
+                    String::new()
+                }
             }
-            _ => String::new(),
+            None => String::new(),
         }
     })
     .await
