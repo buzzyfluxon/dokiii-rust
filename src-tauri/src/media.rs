@@ -27,6 +27,15 @@ static CACHE: Mutex<Cache> = Mutex::new(Cache {
     fetched_at: None,
 });
 
+static FETCH_STARTED: Mutex<Option<Instant>> = Mutex::new(None);
+
+fn lock_fetch() -> std::sync::MutexGuard<'static, Option<Instant>> {
+    match FETCH_STARTED.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    }
+}
+
 fn lock_cache() -> std::sync::MutexGuard<'static, Cache> {
     match CACHE.lock() {
         Ok(guard) => guard,
@@ -77,22 +86,52 @@ mod winrt {
         Manager::RequestAsync().ok()?.get().ok()
     }
 
+    fn is_playing(session: &Session) -> bool {
+        session
+            .GetPlaybackInfo()
+            .ok()
+            .and_then(|info| info.PlaybackStatus().ok())
+            .map(|status| status == Status::Playing)
+            .unwrap_or(false)
+    }
+
+    fn is_music(source: &str) -> bool {
+        source.contains("spotify") || source.contains("applemusic") || source.contains("music")
+    }
+
     fn pick(manager: &Manager) -> Option<Session> {
+        if let Ok(current) = manager.GetCurrentSession() {
+            if is_playing(&current) {
+                return Some(current);
+            }
+        }
         let sessions = manager.GetSessions().ok()?;
+        let mut music: Option<Session> = None;
+        let mut any_playing: Option<Session> = None;
         let mut first: Option<Session> = None;
         for session in sessions {
             let source = session
                 .SourceAppUserModelId()
                 .map(|id| id.to_string().to_lowercase())
                 .unwrap_or_default();
-            if source.contains("spotify") || source.contains("applemusic") || source.contains("music") {
+            let playing = is_playing(&session);
+            if playing && is_music(&source) {
                 return Some(session);
+            }
+            if playing && any_playing.is_none() {
+                any_playing = Some(session.clone());
+            }
+            if is_music(&source) && music.is_none() {
+                music = Some(session.clone());
             }
             if first.is_none() {
                 first = Some(session);
             }
         }
-        manager.GetCurrentSession().ok().or(first)
+        any_playing
+            .or(music)
+            .or_else(|| manager.GetCurrentSession().ok())
+            .or(first)
     }
 
     fn thumbnail(props: &Props) -> Option<String> {
@@ -147,12 +186,14 @@ mod winrt {
         };
 
         let same_track = previous
-            .map(|p| p.title == title && p.artist == artist)
+            .map(|p| {
+                p.title == title && p.artist == artist && p.album_title.as_deref().unwrap_or("") == album
+            })
             .unwrap_or(false);
-        let album_art = if same_track {
-            previous.and_then(|p| p.album_art.clone())
-        } else {
-            thumbnail(&props)
+        let reused = if same_track { previous.and_then(|p| p.album_art.clone()) } else { None };
+        let album_art = match reused {
+            Some(art) => Some(art),
+            None => thumbnail(&props),
         };
 
         Some(MediaInfo {
@@ -183,15 +224,25 @@ pub async fn get_media_info() -> Option<MediaInfo> {
     let (cached, previous) = {
         let cache = lock_cache();
         let ttl = if cache.info.as_ref().map(|i| i.is_playing).unwrap_or(false) {
-            Duration::from_millis(2000)
+            Duration::from_millis(1000)
         } else {
-            Duration::from_millis(7500)
+            Duration::from_millis(2000)
         };
         let fresh = cache.fetched_at.map(|at| at.elapsed() < ttl).unwrap_or(false);
         (if fresh { Some(cache.info.clone()) } else { None }, cache.info.clone())
     };
     if let Some(info) = cached {
         return info;
+    }
+
+    {
+        let mut started = lock_fetch();
+        if let Some(at) = *started {
+            if at.elapsed() < Duration::from_secs(6) {
+                return previous;
+            }
+        }
+        *started = Some(Instant::now());
     }
 
     let fetched = tauri::async_runtime::spawn_blocking(move || {
@@ -207,6 +258,7 @@ pub async fn get_media_info() -> Option<MediaInfo> {
     })
     .await
     .unwrap_or(None);
+    *lock_fetch() = None;
 
     let mut cache = lock_cache();
     cache.info = fetched.clone();

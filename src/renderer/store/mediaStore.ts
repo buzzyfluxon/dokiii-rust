@@ -46,7 +46,10 @@ export const useMediaStore = create<MediaStoreState>((set, get) => {
       }
       if (!pollingEnabled) return;
       rc('media.poll.requests');
-      const info = await window.electronAPI.getMediaInfo();
+      const info = await Promise.race([
+        window.electronAPI.getMediaInfo(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('media timeout')), 6000)),
+      ]);
       if (!isMounted) return;
       const signature = info
         ? `${info.title}|${info.artist}|${info.isPlaying}|${info.appName}|${info.albumArt ? info.albumArt.length : 0}`
@@ -80,10 +83,10 @@ export const useMediaStore = create<MediaStoreState>((set, get) => {
         };
       });
 
-      const nextInterval = info?.isPlaying ? 2500 : 4000;
+      const nextInterval = info?.isPlaying ? 1500 : 3000;
       scheduleNextPoll(nextInterval);
     } catch {
-      scheduleNextPoll(4000);
+      scheduleNextPoll(3000);
     }
   };
 
