@@ -40,6 +40,12 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
+## What's New in 2.1.5
+
+- **Build fix**: the global Widget Color setting is now part of the dock config, so the type check passes and the color is saved and restored correctly.
+
+---
+
 ## What's New in 2.1.4
 
 - **Widget Color**: Control Center > Desktop Widgets > Widget Color. Pick a color with the color pad, hue slider, strength slider, hex code or Apple-style swatches. Use a solid color or a gradient with an angle. Set it for all widgets or for one widget at a time. The color sits on top of the glass, so the blur and shine stay.
@@ -130,7 +136,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.4`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.5`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 
