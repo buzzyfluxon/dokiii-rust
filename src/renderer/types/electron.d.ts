@@ -7,7 +7,6 @@ export interface ElectronAPI {
   emptyRecycleBin(): Promise<void>;
   openRecycleBin(): Promise<void>;
   getInstalledApps(): Promise<AppInfo[]>;
-  getAppMemory(): Promise<{ coreMb: number; interfaceMb: number; totalMb: number }>;
   getSystemMetrics(): Promise<{ cpu: number; ram: number; ssd: number }>;
   getBatteryStatus(): Promise<{ percent: number; isCharging: boolean; hasBattery: boolean }>;
   getAudioVolume(): Promise<{ volume: number; isMuted: boolean }>;
@@ -78,7 +77,6 @@ export interface ElectronAPI {
   openControlCenter(tab?: string): Promise<void>;
   controlCenterReady(): Promise<{ tab: string; open: boolean }>;
   showControlCenter(): Promise<void>;
-  prewarmControlCenter(): Promise<void>;
   closeControlCenter(): Promise<void>;
   minimizeControlCenter(): Promise<void>;
   toggleMaximizeControlCenter(): Promise<void>;

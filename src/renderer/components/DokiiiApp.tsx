@@ -92,7 +92,6 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
     ram: null,
     ssd: null,
   });
-  const [appMem, setAppMem] = useState<{ coreMb: number; interfaceMb: number; totalMb: number } | null>(null);
   const [batteryInfo, setBatteryInfo] = useState<{ percent: number; isCharging: boolean }>({
     percent: 100,
     isCharging: true,
@@ -103,10 +102,6 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
     const loadTelemetry = async () => {
       if (document.visibilityState === 'hidden') return;
       try {
-        if (window.electronAPI?.getAppMemory) {
-          const mem = await window.electronAPI.getAppMemory();
-          if (mounted && mem) setAppMem(mem);
-        }
         if (window.electronAPI?.getSystemMetrics) {
           const m = await window.electronAPI.getSystemMetrics();
           if (mounted && m) setSysMetrics(m);
@@ -168,17 +163,6 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
               <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>SSD </span>
               <span style={{ fontSize: '16px', fontWeight: 700 }}>{sysMetrics.ssd === null ? '--' : `${sysMetrics.ssd}%`}</span>
             </div>
-          </div>
-          <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>DOKIII uses </span>
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#30d158' }}>
-              {appMem ? `${appMem.totalMb < 100 ? appMem.totalMb.toFixed(1) : Math.round(appMem.totalMb)} MB` : '--'}
-            </span>
-            {appMem && (
-              <span style={{ display: 'block', fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>
-                Core {appMem.coreMb.toFixed(1)} MB · Interface {appMem.interfaceMb.toFixed(1)} MB
-              </span>
-            )}
           </div>
         </div>
 
@@ -1153,68 +1137,15 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
     }
   };
 
-  const navItems: { id: DokiiiAppTab; label: string; color: string; glyph: React.ReactNode }[] = [
-    { id: 'home', label: 'Home', color: 'linear-gradient(#4aa8ff,#0a84ff)', glyph: <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /> },
-    {
-      id: 'library',
-      label: 'Widget Library',
-      color: 'linear-gradient(#c08bff,#8e5cf0)',
-      glyph: (
-        <>
-          <rect x="4" y="4" width="7" height="7" rx="1.6" />
-          <rect x="13" y="4" width="7" height="7" rx="1.6" />
-          <rect x="4" y="13" width="7" height="7" rx="1.6" />
-          <rect x="13" y="13" width="7" height="7" rx="1.6" />
-        </>
-      ),
-    },
-    {
-      id: 'profiles',
-      label: 'Widget Profiles',
-      color: 'linear-gradient(#ffb454,#ff8a1e)',
-      glyph: (
-        <>
-          <path d="M12 3l9 5-9 5-9-5z" />
-          <path d="M3 13l9 5 9-5" />
-        </>
-      ),
-    },
-    {
-      id: 'desktop',
-      label: 'Desktop Widgets',
-      color: 'linear-gradient(#52d6c8,#1fb5a8)',
-      glyph: (
-        <>
-          <rect x="3" y="4" width="18" height="12" rx="2" />
-          <path d="M8 20h8M12 16v4" />
-        </>
-      ),
-    },
-    { id: 'dock', label: 'Dock', color: 'linear-gradient(#7d8bff,#5560e8)', glyph: <rect x="3" y="13" width="18" height="7" rx="3.5" /> },
-    { id: 'halo', label: 'Halo', color: 'linear-gradient(#ff7aa8,#f0467d)', glyph: <rect x="4" y="9" width="16" height="6" rx="3" /> },
-    {
-      id: 'settings',
-      label: 'Settings',
-      color: 'linear-gradient(#a3a3ab,#7b7b84)',
-      glyph: (
-        <>
-          <path d="M4 8h9M19 8h1M4 16h1M11 16h9" />
-          <circle cx="16" cy="8" r="2.2" />
-          <circle cx="8" cy="16" r="2.2" />
-        </>
-      ),
-    },
-    {
-      id: 'about',
-      label: 'About',
-      color: 'linear-gradient(#5fdc82,#2fb85a)',
-      glyph: (
-        <>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 11v5M12 8h.01" />
-        </>
-      ),
-    },
+  const navItems: { id: DokiiiAppTab; label: string }[] = [
+    { id: 'home', label: 'Home' },
+    { id: 'library', label: 'Widget Library' },
+    { id: 'profiles', label: 'Widget Profiles' },
+    { id: 'desktop', label: 'Desktop Widgets' },
+    { id: 'dock', label: 'Dock' },
+    { id: 'halo', label: 'Halo' },
+    { id: 'settings', label: 'Settings' },
+    { id: 'about', label: 'About' },
   ];
   const visibleNav = navItems.filter((item) => item.label.toLowerCase().includes(navQuery.trim().toLowerCase()));
 
@@ -1286,11 +1217,6 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
                 className={`dokiii-nav-item ${activeAppTab === item.id ? 'active' : ''}`}
                 onClick={() => setActiveAppTab(item.id)}
               >
-                <span className="dokiii-nav-icon" style={{ background: item.color }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {item.glyph}
-                  </svg>
-                </span>
                 <span>{item.label}</span>
               </button>
             ))}

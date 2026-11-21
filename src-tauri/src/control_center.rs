@@ -7,7 +7,7 @@ use tauri::window::{Color, Effect, EffectsBuilder};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 const LABEL: &str = "control-center";
-const KEEP_ALIVE_SECS: u64 = 180;
+const CLOSE_DELAY_MS: u64 = 450;
 
 static PENDING_TAB: Mutex<String> = Mutex::new(String::new());
 static WANT_OPEN: AtomicBool = AtomicBool::new(false);
@@ -38,16 +38,15 @@ fn cancel_destroy() {
     GENERATION.fetch_add(1, Ordering::SeqCst);
 }
 
-// A hidden window is kept alive for a few minutes so reopening is instant,
-// then destroyed to give the memory back.
 fn schedule_destroy(app: AppHandle) {
     let generation = GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     std::thread::spawn(move || {
-        std::thread::sleep(Duration::from_secs(KEEP_ALIVE_SECS));
+        std::thread::sleep(Duration::from_millis(CLOSE_DELAY_MS));
         if GENERATION.load(Ordering::SeqCst) == generation && !WANT_OPEN.load(Ordering::SeqCst) {
             if let Some(window) = app.get_webview_window(LABEL) {
                 let _ = window.close();
             }
+            crate::system::trim_soon(1500);
         }
     });
 }
@@ -82,19 +81,6 @@ fn safety_show(window: WebviewWindow, after_ms: u64) {
             let _ = window.set_focus();
         }
     });
-}
-
-#[tauri::command]
-pub async fn prewarm_control_center(app: AppHandle) -> Result<(), String> {
-    if app.get_webview_window(LABEL).is_some() {
-        if !WANT_OPEN.load(Ordering::SeqCst) {
-            schedule_destroy(app);
-        }
-        return Ok(());
-    }
-    build(&app)?;
-    schedule_destroy(app);
-    Ok(())
 }
 
 #[tauri::command]

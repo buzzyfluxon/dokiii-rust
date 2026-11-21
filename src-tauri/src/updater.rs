@@ -304,7 +304,7 @@ pub fn install_update(app: AppHandle) {
         state.installer.clone()
     };
     if let Some(path) = installer {
-        if path.exists() && std::process::Command::new(&path).args(["/P", "/UPDATE"]).spawn().is_ok() {
+        if path.exists() && std::process::Command::new(&path).args(["/P", "/R", "/UPDATE"]).spawn().is_ok() {
             app.exit(0);
         }
     }

@@ -51,7 +51,6 @@ export function installTauriBridge(): boolean {
     openRecycleBin: () => call<void>('open_target', { target: 'shell:RecycleBinFolder' }),
     getInstalledApps: () => call('get_installed_apps'),
     getSystemMetrics: () => call('get_system_metrics'),
-    getAppMemory: () => call('get_app_memory'),
     getBatteryStatus: () => call('get_battery_status'),
     getAudioVolume: () => call('get_audio_volume'),
     setAudioVolume: (volume) => call('set_audio_volume', { volume }),
@@ -111,7 +110,6 @@ export function installTauriBridge(): boolean {
     openControlCenter: (tab) => call<void>('open_control_center', { tab }),
     controlCenterReady: () => call<{ tab: string; open: boolean }>('cc_ready'),
     showControlCenter: () => call<void>('cc_show'),
-    prewarmControlCenter: () => call<void>('prewarm_control_center'),
     closeControlCenter: () => call<void>('cc_close'),
     minimizeControlCenter: () => call<void>('cc_minimize'),
     toggleMaximizeControlCenter: () => call<void>('cc_toggle_maximize'),
@@ -139,7 +137,6 @@ export function installTauriBridge(): boolean {
     const bare =
       !el || el === document.documentElement || el === document.body || el === root || el === root?.firstElementChild;
     if (!bare) return true;
-    // Snow piles count as interactive so pressing on one does not click through to the desktop.
     return Boolean((window as any).dokiiiSnowHit?.(x, y));
   };
 

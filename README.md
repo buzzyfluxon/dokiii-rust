@@ -40,6 +40,21 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
+## What's New in 2.1.7
+
+- **Memory trim**: every 30 seconds, and right after you close the Control Center, DOKIII asks Windows to take back unused memory from the app and its interface processes, so the number in Task Manager stays low. Memory comes back only when something on screen needs it.
+- **DOKIII memory readout removed** from Control Center > Home.
+
+---
+
+## What's New in 2.1.6
+
+- **Less memory**: the Control Center window is no longer prepared when you hover the dock logo, and it is closed completely as soon as you close it, so its memory is given back right away.
+- **Cleaner Control Center sidebar**: the colored icons are gone, only the names remain.
+- **Automatic restart after an update**: DOKIII starts again by itself when the update finishes installing.
+
+---
+
 ## What's New in 2.1.5
 
 - **Build fix**: the global Widget Color setting is now part of the dock config, so the type check passes and the color is saved and restored correctly.
@@ -136,7 +151,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.5`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.7`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

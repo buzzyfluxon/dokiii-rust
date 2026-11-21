@@ -185,41 +185,9 @@ pub fn get_battery_status() -> BatteryStatus {
     BatteryStatus::default()
 }
 
-#[derive(Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct AppMemory {
-    core_mb: f64,
-    interface_mb: f64,
-    total_mb: f64,
-}
-
 #[cfg(windows)]
-fn working_set_bytes(pid: u32) -> u64 {
-    use windows::Win32::Foundation::CloseHandle;
-    use windows::Win32::System::ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS};
-    use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
-
-    unsafe {
-        let handle = match OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
-            Ok(handle) => handle,
-            Err(_) => return 0,
-        };
-        let mut counters = PROCESS_MEMORY_COUNTERS::default();
-        let size = std::mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32;
-        counters.cb = size;
-        let ok = GetProcessMemoryInfo(handle, &mut counters, size).is_ok();
-        let _ = CloseHandle(handle);
-        if ok {
-            counters.WorkingSetSize as u64
-        } else {
-            0
-        }
-    }
-}
-
-#[cfg(windows)]
-fn app_memory() -> AppMemory {
-    use std::collections::HashMap;
+fn family_pids() -> Vec<u32> {
+    use std::collections::{HashMap, HashSet};
     use windows::Win32::Foundation::CloseHandle;
     use windows::Win32::System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
@@ -230,7 +198,7 @@ fn app_memory() -> AppMemory {
     unsafe {
         let snapshot = match CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) {
             Ok(handle) => handle,
-            Err(_) => return AppMemory::default(),
+            Err(_) => return vec![own],
         };
         let mut entry = PROCESSENTRY32W::default();
         entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
@@ -245,34 +213,59 @@ fn app_memory() -> AppMemory {
         let _ = CloseHandle(snapshot);
     }
 
-    let core = working_set_bytes(own);
-    let mut interface: u64 = 0;
+    let mut out = vec![own];
+    let mut seen: HashSet<u32> = HashSet::new();
+    seen.insert(own);
     let mut queue: Vec<u32> = children.get(&own).cloned().unwrap_or_default();
-    let mut seen = std::collections::HashSet::new();
     while let Some(pid) = queue.pop() {
         if !seen.insert(pid) {
             continue;
         }
-        interface += working_set_bytes(pid);
+        out.push(pid);
         if let Some(next) = children.get(&pid) {
             queue.extend(next.iter().copied());
         }
     }
+    out
+}
 
-    let mb = |bytes: u64| ((bytes as f64) / 1_048_576.0 * 10.0).round() / 10.0;
-    AppMemory {
-        core_mb: mb(core),
-        interface_mb: mb(interface),
-        total_mb: mb(core + interface),
+#[cfg(windows)]
+fn trim_working_sets() {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::ProcessStatus::EmptyWorkingSet;
+    use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_SET_QUOTA};
+
+    for pid in family_pids() {
+        unsafe {
+            if let Ok(handle) = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_SET_QUOTA, false, pid) {
+                let _ = EmptyWorkingSet(handle);
+                let _ = CloseHandle(handle);
+            }
+        }
     }
 }
 
-#[cfg(not(windows))]
-fn app_memory() -> AppMemory {
-    AppMemory::default()
+#[cfg(windows)]
+pub fn start_trimmer() {
+    std::thread::spawn(|| {
+        std::thread::sleep(std::time::Duration::from_secs(10));
+        loop {
+            trim_working_sets();
+            std::thread::sleep(std::time::Duration::from_secs(30));
+        }
+    });
 }
 
-#[tauri::command]
-pub async fn get_app_memory() -> AppMemory {
-    tauri::async_runtime::spawn_blocking(app_memory).await.unwrap_or_default()
+#[cfg(not(windows))]
+pub fn start_trimmer() {}
+
+#[cfg(windows)]
+pub fn trim_soon(delay_ms: u64) {
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(delay_ms));
+        trim_working_sets();
+    });
 }
+
+#[cfg(not(windows))]
+pub fn trim_soon(_delay_ms: u64) {}

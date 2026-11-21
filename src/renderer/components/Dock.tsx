@@ -337,11 +337,6 @@ export const Dock: React.FC = () => {
           data-dock-item="dokiii-logo"
           data-dock-title="DOKIII Control Center"
           className="dock-logo-btn macos-dock-item"
-          onMouseEnter={() => {
-            try {
-              void window.electronAPI?.prewarmControlCenter?.();
-            } catch (_) {}
-          }}
           onClick={() => toggleDokiiiApp()}
           title=""
           onDragStart={(e) => e.preventDefault()}

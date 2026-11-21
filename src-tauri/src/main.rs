@@ -56,7 +56,6 @@ fn main() {
             process::open_target,
             process::run_command,
             system::get_system_metrics,
-            system::get_app_memory,
             system::get_storage_info,
             system::get_battery_status,
             audio::get_audio_volume,
@@ -75,7 +74,6 @@ fn main() {
             control_center::open_control_center,
             control_center::cc_ready,
             control_center::cc_show,
-            control_center::prewarm_control_center,
             control_center::cc_close,
             control_center::cc_minimize,
             control_center::cc_toggle_maximize,
@@ -113,6 +111,7 @@ fn main() {
             wallpaper::start_watcher(handle.clone());
             updater::start(handle.clone());
             audio::start_watcher(handle.clone());
+            system::start_trimmer();
             cursor::start(handle);
             Ok(())
         })

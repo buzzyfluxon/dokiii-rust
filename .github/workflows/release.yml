@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build and release Windows app
@@ -38,8 +42,14 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
       - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2" --locked
+        shell: pwsh
+        run: |
+          cargo binstall tauri-cli --version "^2" --no-confirm --locked
+          if ($LASTEXITCODE -ne 0) { cargo install tauri-cli --version "^2" --locked }
 
       - name: Build installer
         run: cargo tauri build
