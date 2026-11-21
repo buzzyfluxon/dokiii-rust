@@ -120,8 +120,12 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     if (!isControlCenterWindow()) {
       set({ isWidgetLibraryOpen: false, isSettingsOpen: false });
       try {
-        void window.electronAPI.openControlCenter(tab);
-      } catch (_) {}
+        window.electronAPI.openControlCenter(tab).catch((err: unknown) => {
+          console.error('Control Center failed to open', err);
+        });
+      } catch (err) {
+        console.error('Control Center failed to open', err);
+      }
       return;
     }
     set({ isDokiiiAppOpen: true, activeAppTab: tab });

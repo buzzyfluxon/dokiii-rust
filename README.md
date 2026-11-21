@@ -40,6 +40,10 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
+## What's New in 2.1.1
+
+- **Fix**: the Control Center now opens reliably from the dock logo and the tray.
+
 ## What's New in 2.1.0
 
 - **Snowfall rebuilt**: snow now builds up slowly into soft, rounded piles on the dock, widgets and window tops. Snowballs only appear when you move your cursor through a pile, and they grow as you roll them. Move a window or widget quickly and the snow on it slides and falls off. New option: **Snow in Front of Windows**.
@@ -106,7 +110,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.0`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.1`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

@@ -15,7 +15,7 @@ fn set_tab(tab: &str) {
 }
 
 #[tauri::command]
-pub fn open_control_center(app: AppHandle, tab: Option<String>) -> Result<(), String> {
+pub async fn open_control_center(app: AppHandle, tab: Option<String>) -> Result<(), String> {
     let tab = tab.unwrap_or_else(|| "home".to_string());
     set_tab(&tab);
 
@@ -27,8 +27,9 @@ pub fn open_control_center(app: AppHandle, tab: Option<String>) -> Result<(), St
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, LABEL, WebviewUrl::App("index.html".into()))
+    let window = WebviewWindowBuilder::new(&app, LABEL, WebviewUrl::App("index.html".into()))
         .title("DOKIII Control Center")
+        .initialization_script("window.__DOKIII_WINDOW__ = 'control-center';")
         .inner_size(1040.0, 680.0)
         .min_inner_size(820.0, 520.0)
         .center()
@@ -39,6 +40,15 @@ pub fn open_control_center(app: AppHandle, tab: Option<String>) -> Result<(), St
         .visible(false)
         .build()
         .map_err(|e| e.to_string())?;
+
+    // Safety net: if the page never reports ready, still show the window.
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(4000));
+        if !window.is_visible().unwrap_or(true) {
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    });
     Ok(())
 }
 
