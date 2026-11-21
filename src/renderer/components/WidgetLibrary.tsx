@@ -22,6 +22,7 @@ const WidgetLibrary: React.FC = () => {
 
   const filtered = useMemo(() => {
     return WIDGET_REGISTRY.filter((w) => {
+      if (w.hidden) return false;
       const matchesSearch = !search || w.name.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = activeCategory === 'all' || w.category === activeCategory;
       return matchesSearch && matchesCategory;
@@ -84,7 +85,7 @@ const WidgetLibrary: React.FC = () => {
             <img src={dokiiiLogo} alt="DOKIII" draggable={false} onDragStart={(e) => e.preventDefault()} />
           </div>
           <span className="wl-title">DOKIII Widgets</span>
-          <span className="wl-count">{WIDGET_REGISTRY.length}</span>
+          <span className="wl-count">{WIDGET_REGISTRY.filter((w) => !w.hidden).length}</span>
           <span className="wl-in-bar">{enabledWidgets.length} in bar</span>
           <div className="wl-header-actions">
             <button className="wl-action-btn" onClick={toggleWidgetLibrary} title="Minimize">

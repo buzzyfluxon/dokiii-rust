@@ -290,7 +290,7 @@ export const WidgetIcon: React.FC<{ id: string; size?: number; color?: string; c
     case 'goals':
       return <IconProgressRing size={size} color={color} className={className} />;
     case 'car-card':
-      return <IconNote size={size} color={color} className={className} />;
+      return <IconCamera size={size} color={color} className={className} />;
     case 'travel-card':
       return <IconGlobe size={size} color={color} className={className} />;
     case 'weather':
@@ -304,9 +304,6 @@ export const WidgetIcon: React.FC<{ id: string; size?: number; color?: string; c
       return <IconMusic size={size} color={color} className={className} />;
     case 'book-card':
     case 'movie-card':
-    case 'polaroid':
-    case 'gallery':
-    case 'mood-board':
       return <IconNote size={size} color={color} className={className} />;
     default:
       return <IconApps size={size} color={color} className={className} />;

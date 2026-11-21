@@ -88,6 +88,10 @@ const App: React.FC = () => {
     const removeConfigChanged = window.electronAPI?.onDockConfigChanged((cfg) => {
       updateConfig(cfg);
     });
+    const removeConfigSynced = window.electronAPI?.onConfigSynced?.(() => {
+      void useConfigStore.getState().reload();
+      void useWidgetStore.getState().init();
+    });
     const removeToggleDock = window.electronAPI?.onToggleDock?.(() => {
       const willHide = !useConfigStore.getState().dockHidden;
       toggleDockHidden();
@@ -110,6 +114,7 @@ const App: React.FC = () => {
       removeShowApp?.();
       removeCloseApp?.();
       removeConfigChanged?.();
+      removeConfigSynced?.();
       removeToggleDock?.();
       removeUpdaterStatus?.();
     };

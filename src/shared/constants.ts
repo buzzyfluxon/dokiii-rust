@@ -33,9 +33,6 @@ export const WIDGET_IDS = {
   TRAVEL_CARD: 'travel-card',
   BOOK_CARD: 'book-card',
   MOVIE_CARD: 'movie-card',
-  POLAROID: 'polaroid',
-  GALLERY: 'gallery',
-  MOOD_BOARD: 'mood-board',
   WEATHER: 'weather',
   BIG_DATE: 'big-date',
   DIGITAL_CLOCK: 'digital-clock',
@@ -62,15 +59,14 @@ export type DesktopWidgetType =
   | 'travel-card'
   | 'book-card'
   | 'movie-card'
-  | 'polaroid'
-  | 'gallery'
-  | 'mood-board'
   | 'weather'
   | 'big-date'
   | 'digital-clock'
   | 'photo-card'
   | 'music-card'
   | 'app-icon';
+
+export const REMOVED_WIDGET_TYPES = ['polaroid', 'gallery', 'mood-board'];
 
 export type DesktopWidgetSize = 'small' | 'medium' | 'large';
 
@@ -113,6 +109,7 @@ export interface WidgetDefinition {
   defaultWidth: 'compact' | 'normal' | 'wide';
   description: string;
   placement: 'dock' | 'desktop';
+  hidden?: boolean;
 }
 
 export type WidgetCategory =
@@ -165,17 +162,14 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
   { id: WIDGET_IDS.QUOTE_CARD, name: 'Quote Card', category: 'personal', icon: 'note', defaultWidth: 'compact', description: 'A quote and author you choose', placement: 'desktop' },
   { id: WIDGET_IDS.COUNTDOWN, name: 'Countdown', category: 'personal', icon: 'progress', defaultWidth: 'compact', description: 'Count down to a date you set', placement: 'desktop' },
   { id: WIDGET_IDS.GOALS, name: 'Goals', category: 'personal', icon: 'progress', defaultWidth: 'compact', description: 'Track up to 5 personal goals', placement: 'desktop' },
-  { id: WIDGET_IDS.CAR_CARD, name: 'Car Card', category: 'personal', icon: 'note', defaultWidth: 'compact', description: 'A visual card for your favorite car', placement: 'desktop' },
+  { id: WIDGET_IDS.CAR_CARD, name: 'Photo', category: 'personal', icon: 'camera', defaultWidth: 'compact', description: 'Your own picture with an optional title. Click it to change', placement: 'desktop' },
   { id: WIDGET_IDS.TRAVEL_CARD, name: 'Travel Card', category: 'personal', icon: 'globe', defaultWidth: 'compact', description: 'A minimal postcard for your next destination', placement: 'desktop' },
   { id: WIDGET_IDS.BOOK_CARD, name: 'Book Card', category: 'personal', icon: 'note', defaultWidth: 'compact', description: 'Cover, title, author and reading progress', placement: 'desktop' },
   { id: WIDGET_IDS.MOVIE_CARD, name: 'Movie / Game Card', category: 'personal', icon: 'note', defaultWidth: 'compact', description: 'Poster, title, rating and watch/play status', placement: 'desktop' },
-  { id: WIDGET_IDS.POLAROID, name: 'Polaroid', category: 'personal', icon: 'note', defaultWidth: 'compact', description: 'One photo in a Polaroid-style frame', placement: 'desktop' },
-  { id: WIDGET_IDS.GALLERY, name: 'Gallery', category: 'personal', icon: 'note', defaultWidth: 'compact', description: 'A simple 2x2 photo grid', placement: 'desktop' },
-  { id: WIDGET_IDS.MOOD_BOARD, name: 'Mood Board', category: 'personal', icon: 'note', defaultWidth: 'compact', description: 'A 2-6 image collage', placement: 'desktop' },
   { id: WIDGET_IDS.WEATHER, name: 'Weather', category: 'system', icon: 'globe', defaultWidth: 'normal', description: 'Live temperature, hourly and 5-day forecast for any city', placement: 'desktop' },
   { id: WIDGET_IDS.BIG_DATE, name: 'Big Date & Time', category: 'time', icon: 'clock', defaultWidth: 'wide', description: 'Weekday, date and oversized stacked time with battery pill', placement: 'desktop' },
   { id: WIDGET_IDS.DIGITAL_CLOCK, name: 'Digital Clock Tile', category: 'time', icon: 'clock', defaultWidth: 'compact', description: 'Framed digital clock with a city label', placement: 'desktop' },
-  { id: WIDGET_IDS.PHOTO_CARD, name: 'Photo Card', category: 'personal', icon: 'camera', defaultWidth: 'normal', description: 'Edge-to-edge photo, optional black and white. Double-click to change', placement: 'desktop' },
+  { id: WIDGET_IDS.PHOTO_CARD, name: 'Photo Card', category: 'personal', icon: 'camera', defaultWidth: 'normal', description: 'Edge-to-edge photo, optional black and white. Double-click to change', placement: 'desktop', hidden: true },
   { id: WIDGET_IDS.MUSIC_CARD, name: 'Music Card', category: 'media', icon: 'music', defaultWidth: 'normal', description: 'Now playing with play button and album strip', placement: 'desktop' },
 ];
 
@@ -263,6 +257,7 @@ export const DEFAULT_DOCK_CONFIG = {
     intensity: 'medium' as 'low' | 'medium' | 'high',
     snowballs: true,
     onWindows: true,
+    inFront: false,
   },
   halo: {
     enabled: true,
@@ -280,6 +275,7 @@ export interface SnowConfig {
   intensity: 'low' | 'medium' | 'high';
   snowballs: boolean;
   onWindows: boolean;
+  inFront: boolean;
 }
 
 export const DEFAULT_SNOW_CONFIG: SnowConfig = {
@@ -287,6 +283,7 @@ export const DEFAULT_SNOW_CONFIG: SnowConfig = {
   intensity: 'medium',
   snowballs: true,
   onWindows: true,
+  inFront: false,
 };
 
 export interface MusicAmbientConfig {

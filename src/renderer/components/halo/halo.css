@@ -31,7 +31,8 @@
   align-items: center;
   overflow: hidden;
   box-sizing: border-box;
-  transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1), height 320ms cubic-bezier(0.16, 1, 0.3, 1), border-radius 250ms ease, box-shadow 250ms ease, background 250ms ease, padding 250ms ease;
+  transition: width 520ms cubic-bezier(0.32, 1.32, 0.5, 1), height 520ms cubic-bezier(0.32, 1.32, 0.5, 1), border-radius 420ms cubic-bezier(0.32, 1.2, 0.5, 1), box-shadow 300ms ease, background 250ms ease, padding 420ms cubic-bezier(0.32, 1.2, 0.5, 1), transform 220ms cubic-bezier(0.3, 1.4, 0.5, 1);
+  will-change: width, height;
 }
 
 .halo-root.reduced-motion .halo-pill,
@@ -326,4 +327,94 @@
   height: 100%;
   background: #0a84ff;
   border-radius: 2px;
+}
+
+/* Apple style (Dynamic Island) open and close motion */
+.halo-pill.state-idle:active,
+.halo-pill.state-music:active,
+.halo-pill.state-system:active,
+.halo-pill.state-notification:active {
+  transform: scale(0.95);
+}
+
+.halo-compact-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  animation: haloCompactIn 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.halo-exp-wrap {
+  width: 352px;
+  height: 92px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  transform-origin: 50% 0;
+  animation: haloExpIn 520ms cubic-bezier(0.22, 1.1, 0.36, 1) 70ms both;
+}
+
+.halo-exp-wrap.leaving {
+  animation: haloExpOut 170ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.halo-exp-wrap .halo-exp-header {
+  animation: haloRise 440ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.halo-exp-wrap .halo-exp-art {
+  animation: haloArtIn 560ms cubic-bezier(0.22, 1.3, 0.36, 1) 150ms both;
+}
+
+.halo-exp-wrap .halo-exp-info {
+  animation: haloRise 460ms cubic-bezier(0.22, 1, 0.36, 1) 190ms both;
+}
+
+.halo-exp-wrap .halo-exp-controls {
+  animation: haloRise 460ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+}
+
+.halo-root:has(.state-expanded) {
+  animation: haloLift 560ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+@keyframes haloLift {
+  0% { transform: translateX(-50%) translateY(0) scale(1); }
+  35% { transform: translateX(-50%) translateY(2px) scale(1.035); }
+  100% { transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+@keyframes haloCompactIn {
+  0% { opacity: 0; transform: scale(0.88); filter: blur(5px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+@keyframes haloExpIn {
+  0% { opacity: 0; transform: scale(0.9); filter: blur(10px); }
+  60% { filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+@keyframes haloExpOut {
+  0% { opacity: 1; transform: scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: scale(0.94); filter: blur(8px); }
+}
+
+@keyframes haloRise {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes haloArtIn {
+  0% { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.halo-root.reduced-motion *,
+.halo-root.reduced-motion {
+  animation: none !important;
 }

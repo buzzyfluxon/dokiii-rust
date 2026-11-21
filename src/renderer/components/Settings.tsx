@@ -406,7 +406,7 @@ export const Settings: React.FC = () => {
                   <div className="setting-row">
                     <div>
                       <div className="setting-label">Snowballs</div>
-                      <div className="setting-desc">Snowballs form on the snow pile. Drag them around and stack three to build a snowman</div>
+                      <div className="setting-desc">Move your cursor through a snow pile to roll a snowball that grows as it rolls. Stack three to build a snowman</div>
                     </div>
                     <button
                       className={`setting-toggle${dock.snow?.snowballs !== false ? ' on' : ''}`}
@@ -427,6 +427,20 @@ export const Settings: React.FC = () => {
                       onClick={() => {
                         const snow = { ...DEFAULT_SNOW_CONFIG, ...(dock.snow || {}) };
                         updateConfig({ snow: { ...snow, onWindows: !snow.onWindows } });
+                      }}
+                    />
+                  </div>
+
+                  <div className="setting-row">
+                    <div>
+                      <div className="setting-label">Snow in Front of Windows</div>
+                      <div className="setting-desc">Off keeps snow behind your windows. On lets it fall over them and lifts DOKIII above other windows</div>
+                    </div>
+                    <button
+                      className={`setting-toggle${dock.snow?.inFront ? ' on' : ''}`}
+                      onClick={() => {
+                        const snow = { ...DEFAULT_SNOW_CONFIG, ...(dock.snow || {}) };
+                        updateConfig({ snow: { ...snow, inFront: !snow.inFront } });
                       }}
                     />
                   </div>

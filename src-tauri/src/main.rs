@@ -5,6 +5,7 @@ mod audio;
 mod bin;
 mod commands;
 mod config;
+mod control_center;
 mod cursor;
 mod display;
 mod filesystem;
@@ -69,6 +70,13 @@ fn main() {
             filesystem::get_screenshots_dir,
             filesystem::search_files,
             snow::set_snow_active,
+            control_center::open_control_center,
+            control_center::cc_ready,
+            control_center::cc_close,
+            control_center::cc_minimize,
+            control_center::cc_toggle_maximize,
+            control_center::cc_drag,
+            snow::set_snow_front,
             media::get_media_info,
             media::media_control,
             media::media_seek,
@@ -102,7 +110,7 @@ fn main() {
             Ok(())
         })
         .on_window_event(|window, event| match event {
-            WindowEvent::CloseRequested { api, .. } => {
+            WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
                 api.prevent_close();
                 let modal = window.state::<AppState>().modal.load(Ordering::Relaxed);
                 if modal {

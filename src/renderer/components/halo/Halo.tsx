@@ -62,6 +62,8 @@ export const Halo: React.FC = () => {
   const haloSample = useLiquidGlassStore((s) => s.getHaloSample());
 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [renderExpanded, setRenderExpanded] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const mediaInfo = useMediaStore((s) => s.mediaInfo);
   const controlMedia = useMediaStore((s) => s.controlMedia);
   const seekMedia = useMediaStore((s) => s.seekMedia);
@@ -189,6 +191,21 @@ export const Halo: React.FC = () => {
     halo?.showDownloads,
     triggerEphemeral,
   ]);
+
+  useEffect(() => {
+    if (isExpanded) {
+      setRenderExpanded(true);
+      setLeaving(false);
+      return;
+    }
+    if (!renderExpanded) return;
+    setLeaving(true);
+    const t = setTimeout(() => {
+      setRenderExpanded(false);
+      setLeaving(false);
+    }, 170);
+    return () => clearTimeout(t);
+  }, [isExpanded]);
 
   useEffect(() => {
     if (!isExpanded) return;
@@ -394,12 +411,16 @@ export const Halo: React.FC = () => {
             : undefined
         }
       >
-        {!isExpanded && (
-          <div className="halo-logo">
-            <img src={dokiiiLogo} alt="DOKIII" draggable={false} />
+        {renderExpanded ? (
+          <div className={`halo-exp-wrap${leaving ? ' leaving' : ''}`}>{renderExpandedContent()}</div>
+        ) : (
+          <div className="halo-compact-wrap" key={getPillStateClass()}>
+            <div className="halo-logo">
+              <img src={dokiiiLogo} alt="DOKIII" draggable={false} />
+            </div>
+            {renderCompactContent()}
           </div>
         )}
-        {!isExpanded ? renderCompactContent() : renderExpandedContent()}
       </div>
     </div>
   );

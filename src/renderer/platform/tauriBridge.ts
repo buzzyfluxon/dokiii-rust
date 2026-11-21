@@ -99,6 +99,15 @@ export function installTauriBridge(): boolean {
     getWallpaperColors: () => call<WallpaperPalette>('get_wallpaper_colors'),
     onWallpaperColorsUpdated: (callback) => subscribe('wallpaper:colors-updated', callback),
     setSnowActive: (active) => call<void>('set_snow_active', { active }),
+    setSnowFront: (front) => call<void>('set_snow_front', { front }),
+    openControlCenter: (tab) => call<void>('open_control_center', { tab }),
+    controlCenterReady: () => call<string>('cc_ready'),
+    closeControlCenter: () => call<void>('cc_close'),
+    minimizeControlCenter: () => call<void>('cc_minimize'),
+    toggleMaximizeControlCenter: () => call<void>('cc_toggle_maximize'),
+    dragControlCenter: () => call<void>('cc_drag'),
+    onControlCenterTab: (callback) => subscribe<string>('cc:tab', callback),
+    onConfigSynced: (callback) => subscribe('config:synced', () => callback()),
     onSnowDesktopState: (callback) => subscribe('snow:desktopState', callback),
     appReady: () => {
       void call<void>('app_ready');

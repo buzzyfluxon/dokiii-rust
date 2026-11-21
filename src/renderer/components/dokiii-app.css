@@ -435,3 +435,108 @@
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
+
+/* Control Center as its own native window */
+.dokiii-app-standalone {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: none;
+  padding: 14px;
+}
+
+.dokiii-app-standalone:has(.dokiii-window.is-maximized) {
+  padding: 0;
+}
+
+.dokiii-app-standalone .dokiii-window {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transform-origin: 50% 55%;
+  animation: ccOpen 560ms cubic-bezier(0.2, 1.2, 0.34, 1) both;
+}
+
+.dokiii-app-standalone .dokiii-window.is-maximized {
+  border-radius: 0;
+}
+
+.dokiii-app-standalone.is-closing .dokiii-window {
+  animation: ccClose 210ms cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+.dokiii-app-standalone .dokiii-nav-item {
+  animation: ccRise 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(140ms + var(--i, 0) * 34ms);
+}
+
+.dokiii-app-standalone .dokiii-window-controls {
+  animation: ccRise 420ms cubic-bezier(0.22, 1, 0.36, 1) 100ms both;
+}
+
+.dokiii-app-standalone .dokiii-content-header {
+  animation: ccRise 460ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both;
+}
+
+.dokiii-app-standalone .dokiii-main-content > :not(.dokiii-content-header) {
+  animation: ccTabIn 420ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+}
+
+.dokiii-app-standalone .dokiii-sidebar,
+.dokiii-app-standalone .dokiii-content-header {
+  cursor: default;
+}
+
+@keyframes ccOpen {
+  0% {
+    opacity: 0;
+    transform: scale(0.88) translateY(18px);
+    filter: blur(10px);
+  }
+  55% {
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes ccClose {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+    filter: blur(8px);
+  }
+}
+
+@keyframes ccRise {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ccTabIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

@@ -1,5 +1,3 @@
-
-
 <p align="center">
   <img src="assets/app-logo.png" alt="DOKIII Logo" width="96" />
 </p>
@@ -7,15 +5,16 @@
 <h1 align="center">DOKIII</h1>
 
 <p align="center">
-  A macOS-inspired dock, floating music player, and desktop widgets for Windows.
+  A macOS-inspired dock, Dynamic Island style Halo, music player and desktop widgets for Windows.<br/>
+  Rewritten on <b>Tauri 2 + Rust</b>: smaller, lighter and quicker than the Electron version.
 </p>
 
 <p align="center">
-  <a href="https://github.com/buzzyfluxon/dokiii-fluxon/releases/latest">
-    <img src="https://img.shields.io/github/v/release/buzzyfluxon/dokiii-fluxon?style=for-the-badge&color=b39ddb&label=version" alt="Latest Release" />
+  <a href="https://github.com/buzzyfluxon/dokiii-rust/releases/latest">
+    <img src="https://img.shields.io/github/v/release/buzzyfluxon/dokiii-rust?style=for-the-badge&color=b39ddb&label=version" alt="Latest Release" />
   </a>
-  <a href="https://github.com/buzzyfluxon/dokiii-fluxon/releases">
-    <img src="https://img.shields.io/github/downloads/buzzyfluxon/dokiii-fluxon/total?style=for-the-badge&color=b39ddb&label=downloads" alt="Downloads" />
+  <a href="https://github.com/buzzyfluxon/dokiii-rust/releases">
+    <img src="https://img.shields.io/github/downloads/buzzyfluxon/dokiii-rust/total?style=for-the-badge&color=b39ddb&label=downloads" alt="Downloads" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-b39ddb?style=for-the-badge" alt="License" />
@@ -28,57 +27,59 @@
 ## Download
 
 <p align="center">
-  <a href="https://github.com/buzzyfluxon/dokiii-fluxon/releases/latest/download/DOKIII-Setup.exe">
+  <a href="https://github.com/buzzyfluxon/dokiii-rust/releases/latest/download/DOKIII-Setup.exe">
     <img src="https://img.shields.io/badge/Download-DOKIII--Setup.exe-b39ddb?style=for-the-badge&logo=windows&logoColor=white" alt="Download DOKIII Installer" />
   </a>
   <br/>
   <sub>Single installer &nbsp;•&nbsp; Windows 10/11 x64 &nbsp;•&nbsp; Choose your install folder</sub>
 </p>
 
-Download `DOKIII-Setup.exe` and run it. The installer lets you pick the install folder (any drive) and sets up the shortcuts you choose. Nothing else is required.
+Download `DOKIII-Setup.exe` and run it. The installer lets you pick the install folder and sets up the shortcuts you choose. Windows SmartScreen may show a warning the first time because the app is not code-signed: select **More info**, then **Run anyway**.
 
-Windows SmartScreen may show a warning the first time, because the app is not code-signed. Select **More info**, then **Run anyway**.
+Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-rust/releases). The app checks this repository for updates.
 
-You can also browse every version on the [Releases page](https://github.com/buzzyfluxon/dokiii-fluxon/releases).
+---
+
+## What's New in 2.1.0
+
+- **Snowfall rebuilt**: snow now builds up slowly into soft, rounded piles on the dock, widgets and window tops. Snowballs only appear when you move your cursor through a pile, and they grow as you roll them. Move a window or widget quickly and the snow on it slides and falls off. New option: **Snow in Front of Windows**.
+- **Apple style animations**: the Halo expands and collapses like the Dynamic Island, and the Control Center opens and closes with a spring animation.
+- **Control Center is its own window**: it shows in the taskbar and in Alt+Tab. Changes you make there apply to the dock right away.
+- **Music shows up on its own**: the Halo and dock player now pick up music as soon as it starts, with no need to press play inside DOKIII first.
+- **Cleaner widget library**: Car Card is now **Photo**. Polaroid, Gallery and Mood Board were removed because they duplicated it.
 
 ---
 
 ## What It Does
 
-- **macOS-Style Dock**: An animated bottom or side dock with fluid magnification, app badges, and quick folder access, including Downloads and the Recycle Bin.
-- **Halo and Floating Music**: Shows the current song, artist, and album art from Spotify and Windows media players, with playback controls.
-- **Desktop Widgets**: Glanceable widgets for world time, analog clock, calendar, system health (CPU, RAM, SSD), battery, and volume.
+- **macOS-Style Dock**: an animated bottom or side dock with fluid magnification, app badges and quick folder access, including Downloads and the Recycle Bin.
+- **Halo and Floating Music**: shows the current song, artist and album art from Spotify and Windows media players, with playback controls.
+- **Desktop Widgets**: world time, analog clock, calendar, system health (CPU, RAM, SSD), battery, volume, photo, music, movie and more.
+- **Snowfall**: an optional Christmas effect that settles on the dock, widgets and windows.
 
 ---
 
 ## How to Use
 
-### Getting Started
-1. Download `DOKIII-Setup.exe` from [Releases](https://github.com/buzzyfluxon/dokiii-fluxon/releases/latest).
-2. Run it and follow the installer. The dock and widgets appear on your desktop when it finishes.
-
 ### Dock
-- **Launch apps**: Click any icon on the dock.
-- **Add apps**: Click the **+** button to search installed programs or browse for an `.exe`.
-- **Downloads**: Click the downloads folder icon on the right side of the dock to view or open recent files.
-- **Move the dock**: Open Settings to place the dock on the bottom, left, or right edge of the screen.
+- **Launch apps**: click any icon.
+- **Add apps**: click **+** to search installed programs or browse for an `.exe`.
+- **Downloads**: click the downloads icon on the right of the dock.
+- **Move the dock**: open Settings to place it on the bottom, left or right edge.
 
 ### Music and Halo
 - Play music in Spotify or any Windows media app.
-- The floating player and the Halo bar update automatically with track details and album art.
-- Click the player to pause, play, or skip tracks. Click outside to collapse it.
+- Click the Halo or the floating player to expand it, then pause, play or skip. Click outside to collapse.
 
-### Desktop Widgets
-- Open the Control Center by clicking the DOKIII logo or using the system tray icon.
-- Turn desktop widgets on or off with a single switch.
-- Choose which widgets to show: System Monitor, Clocks, Calendar, Battery, Volume.
+### Control Center
+- Click the DOKIII logo or use the tray icon. It opens as its own window, so you can Alt+Tab to it.
+- Turn desktop widgets on or off, pick widgets, change the dock, Halo and snow settings.
 
-### Snowfall (Christmas update)
-
-Turn on Snowfall in Settings to let snow drift across the desktop and settle in soft piles on the Dock, desktop widgets and the top edge of any window sitting on the desktop. Snowballs form on the piles now and then. Drag them around and stack three to build a snowman, and double-click a snowman to knock it back into snowballs. Snow pauses automatically while a maximized or full-screen app covers the desktop.
+### Snowfall
+Turn on Snowfall in Settings. Move your cursor through a pile to roll a snowball. Drag balls around and stack three to build a snowman, and double-click a snowman to knock it back into snowballs. Snow pauses while a maximized or full-screen app covers the desktop.
 
 ### Uninstalling
-Open the Control Center and choose **Uninstall**, or use **Uninstall DOKIII** in the tray menu. You can also remove it from Windows Settings under Installed apps.
+Open the Control Center and choose **Uninstall**, use **Uninstall DOKIII** in the tray menu, or remove it from Windows Settings under Installed apps.
 
 ---
 
@@ -94,8 +95,8 @@ DOKIII is a Tauri 2 app: a Rust backend in `src-tauri` and a React interface in 
 
 ### Run in development
 ```bash
-git clone https://github.com/buzzyfluxon/dokiii-fluxon.git
-cd dokiii-fluxon
+git clone https://github.com/buzzyfluxon/dokiii-rust.git
+cd dokiii-rust
 npm install
 npm run tauri:dev
 ```
@@ -105,7 +106,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.0`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

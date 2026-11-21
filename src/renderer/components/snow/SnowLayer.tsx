@@ -14,6 +14,7 @@ const SnowLayer: React.FC = () => {
   const intensity = snow?.intensity ?? DEFAULT_SNOW_CONFIG.intensity;
   const snowballs = snow?.snowballs ?? DEFAULT_SNOW_CONFIG.snowballs;
   const onWindows = snow?.onWindows ?? DEFAULT_SNOW_CONFIG.onWindows;
+  const inFront = snow?.inFront ?? DEFAULT_SNOW_CONFIG.inFront;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -26,8 +27,8 @@ const SnowLayer: React.FC = () => {
 
   useEffect(() => {
     if (!initialized) return;
-    getSnowEngine().configure({ enabled, intensity, snowballs, onWindows });
-  }, [initialized, enabled, intensity, snowballs, onWindows]);
+    getSnowEngine().configure({ enabled, intensity, snowballs, onWindows, inFront });
+  }, [initialized, enabled, intensity, snowballs, onWindows, inFront]);
 
   return (
     <div ref={containerRef} className="snow-layer" style={{ display: 'none' }}>

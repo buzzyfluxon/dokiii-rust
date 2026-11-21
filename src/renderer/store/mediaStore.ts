@@ -40,7 +40,10 @@ export const useMediaStore = create<MediaStoreState>((set, get) => {
 
   const fetchMediaInternal = async () => {
     try {
-      if (!window.electronAPI?.getMediaInfo) return;
+      if (!window.electronAPI?.getMediaInfo) {
+        scheduleNextPoll(400);
+        return;
+      }
       if (!pollingEnabled) return;
       rc('media.poll.requests');
       const info = await window.electronAPI.getMediaInfo();
@@ -77,10 +80,10 @@ export const useMediaStore = create<MediaStoreState>((set, get) => {
         };
       });
 
-      const nextInterval = info?.isPlaying ? 3000 : 8000;
+      const nextInterval = info?.isPlaying ? 2500 : 4000;
       scheduleNextPoll(nextInterval);
     } catch {
-      scheduleNextPoll(8000);
+      scheduleNextPoll(4000);
     }
   };
 

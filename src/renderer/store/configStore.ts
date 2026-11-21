@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isControlCenterWindow } from '../platform/windowKind';
 import {
   DockConfig,
   DEFAULT_DOCK_CONFIG,
@@ -11,6 +12,7 @@ import {
   PRESET_PROFILES,
   DEFAULT_DESKTOP_WIDGETS,
   DESKTOP_WIDGET_DEFAULT_DIMS,
+  REMOVED_WIDGET_TYPES,
 } from '../../shared/constants';
 import { useWidgetStore } from './widgetStore';
 import { findFreeSpot, fitWidgetResize, getDockReservedRect } from '../utils/widgetPlacement';
@@ -43,6 +45,7 @@ interface ConfigState {
   toggleSettings: () => void;
   openDokiiiApp: (tab?: DokiiiAppTab) => void;
   closeDokiiiApp: () => void;
+  reload: () => Promise<void>;
   toggleDokiiiApp: (tab?: DokiiiAppTab) => void;
   setActiveAppTab: (tab: DokiiiAppTab) => void;
   closeOverlays: () => void;
@@ -114,32 +117,53 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   toggleSettings: () =>
     set((s) => ({ isSettingsOpen: !s.isSettingsOpen, isWidgetLibraryOpen: false })),
   openDokiiiApp: (tab = 'home') => {
-    set({
-      isDokiiiAppOpen: true,
-      activeAppTab: tab,
-      isWidgetLibraryOpen: false,
-      isSettingsOpen: false,
-    });
-    try {
-      window.electronAPI.setModalOpen(true);
-    } catch (_) {}
+    if (!isControlCenterWindow()) {
+      set({ isWidgetLibraryOpen: false, isSettingsOpen: false });
+      try {
+        void window.electronAPI.openControlCenter(tab);
+      } catch (_) {}
+      return;
+    }
+    set({ isDokiiiAppOpen: true, activeAppTab: tab });
   },
   closeDokiiiApp: () => {
+    if (isControlCenterWindow()) {
+      try {
+        void window.electronAPI.closeControlCenter();
+      } catch (_) {}
+      return;
+    }
     set({ isDokiiiAppOpen: false });
     try {
       window.electronAPI.setModalOpen(false);
     } catch (_) {}
   },
   toggleDokiiiApp: (tab = 'home') => {
-    const next = !get().isDokiiiAppOpen;
-    set({
-      isDokiiiAppOpen: next,
-      activeAppTab: tab,
-      isWidgetLibraryOpen: false,
-      isSettingsOpen: false,
-    });
+    get().openDokiiiApp(tab);
+  },
+  reload: async () => {
     try {
-      window.electronAPI.setModalOpen(next);
+      const config = await window.electronAPI.getConfig();
+      if (!config) return;
+      const next: Partial<ConfigState> = {};
+      if (config.dock) {
+        next.dock = {
+          ...DEFAULT_DOCK_CONFIG,
+          ...config.dock,
+          pinnedApps: config.dock.pinnedApps || DEFAULT_DOCK_CONFIG.pinnedApps,
+          desktopWidgets: (config.dock.desktopWidgets || DEFAULT_DESKTOP_WIDGETS).filter(
+            (w: { type: string }) => !REMOVED_WIDGET_TYPES.includes(w.type)
+          ),
+        };
+      }
+      if (config.profiles && config.profiles.length > 0) {
+        next.profiles = config.profiles.map((p) => ({
+          ...p,
+          desktopWidgets: (p.desktopWidgets || []).filter((w) => !REMOVED_WIDGET_TYPES.includes(w.type)),
+        }));
+      }
+      if (config.activeProfileId) next.activeProfileId = config.activeProfileId;
+      set(next as ConfigState);
     } catch (_) {}
   },
   setActiveAppTab: (tab) => set({ activeAppTab: tab }),
@@ -362,7 +386,11 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
       const missingPresets = PRESET_PROFILES.filter(
         (preset) => !seededIds.includes(preset.id) && !baseProfiles.some((p) => p.id === preset.id)
       );
-      const loadedProfiles = missingPresets.length ? [...baseProfiles, ...missingPresets] : baseProfiles;
+      const mergedProfiles = missingPresets.length ? [...baseProfiles, ...missingPresets] : baseProfiles;
+      const loadedProfiles = mergedProfiles.map((p) => ({
+        ...p,
+        desktopWidgets: (p.desktopWidgets || []).filter((w) => !REMOVED_WIDGET_TYPES.includes(w.type)),
+      }));
       if (missingPresets.length || seededIds.length === 0) {
         const nextSeeded = Array.from(new Set([...seededIds, ...PRESET_PROFILES.map((p) => p.id)]));
         try {
@@ -377,7 +405,9 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
             ...DEFAULT_DOCK_CONFIG,
             ...config.dock,
             pinnedApps: config.dock.pinnedApps || DEFAULT_DOCK_CONFIG.pinnedApps,
-            desktopWidgets: config.dock.desktopWidgets || DEFAULT_DESKTOP_WIDGETS,
+            desktopWidgets: (config.dock.desktopWidgets || DEFAULT_DESKTOP_WIDGETS).filter(
+              (w: { type: string }) => !REMOVED_WIDGET_TYPES.includes(w.type)
+            ),
           },
           profiles: loadedProfiles,
           activeProfileId: loadedActiveId,

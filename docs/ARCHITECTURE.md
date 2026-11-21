@@ -43,8 +43,13 @@ Everything the old Electron build did now lives in Rust. The Rust has not been c
 
 - Images picked with the image picker are served through Tauri's asset protocol. Image paths already saved in an Electron config as `file:///...` will not load until they are picked again.
 - The Spotify window-title fallback for media info is not ported. Spotify reports through the Windows media session API, so it should not be needed.
-- The updater reads the latest GitHub release of `buzzyfluxon/dokiii-fluxon`, downloads the asset ending in `-setup.exe` and runs it with `/P /UPDATE`. It relies on HTTPS and the repository for trust, with no signature check. Tauri's signed updater is the stricter option if you want it later.
+- The updater reads the latest GitHub release of `buzzyfluxon/dokiii-rust`, downloads the asset ending in `-setup.exe` and runs it with `/P /UPDATE`. It relies on HTTPS and the repository for trust, with no signature check. Tauri's signed updater is the stricter option if you want it later.
 - Screenshots use GDI (`BitBlt` and `PrintWindow`) instead of the old desktop capturer, so protected or hardware-accelerated windows may come out black.
 - The `window.electronAPI` name is kept so the React code did not need to change. It is now provided by `src/renderer/platform/tauriBridge.ts`.
 - The old custom installer and uninstaller pages are gone. The standard NSIS installer is used.
 - The window position is no longer remembered between runs, and plugging in or removing a monitor does not refit the window yet.
+
+## Windows
+
+- `main` is the transparent dock, Halo and widgets layer. It is click-through except over interactive elements.
+- `control-center` is created on demand by `src-tauri/src/control_center.rs`. It is a normal frameless window, so it appears in the taskbar and Alt+Tab. It loads the same bundle, and `src/renderer/platform/windowKind.ts` picks which root renders. Saving config in one window emits `config:synced` to the other, which reloads its stores.

@@ -16,9 +16,6 @@ import { CarCardWidget } from './CarCardWidget';
 import { TravelCardWidget } from './TravelCardWidget';
 import { BookCardWidget } from './BookCardWidget';
 import { MovieCardWidget } from './MovieCardWidget';
-import { PolaroidWidget } from './PolaroidWidget';
-import { GalleryWidget } from './GalleryWidget';
-import { MoodBoardWidget } from './MoodBoardWidget';
 import { WeatherWidget } from './WeatherWidget';
 import { BigDateWidget } from './BigDateWidget';
 import { DigitalClockWidget } from './DigitalClockWidget';
@@ -126,30 +123,6 @@ export const renderDesktopWidgetContent = (
     case 'movie-card':
       return (
         <MovieCardWidget
-          size={item.size}
-          data={item.data}
-          onUpdateData={(patch) => onUpdateData(patch)}
-        />
-      );
-    case 'polaroid':
-      return (
-        <PolaroidWidget
-          size={item.size}
-          data={item.data}
-          onUpdateData={(patch) => onUpdateData(patch)}
-        />
-      );
-    case 'gallery':
-      return (
-        <GalleryWidget
-          size={item.size}
-          data={item.data}
-          onUpdateData={(patch) => onUpdateData(patch)}
-        />
-      );
-    case 'mood-board':
-      return (
-        <MoodBoardWidget
           size={item.size}
           data={item.data}
           onUpdateData={(patch) => onUpdateData(patch)}

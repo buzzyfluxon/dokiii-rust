@@ -6,6 +6,11 @@ use tauri::{AppHandle, Emitter, Manager};
 
 static ACTIVE: AtomicBool = AtomicBool::new(false);
 static GENERATION: AtomicU64 = AtomicU64::new(0);
+static FRONT: AtomicBool = AtomicBool::new(false);
+
+pub fn front() -> bool {
+    FRONT.load(Ordering::Relaxed)
+}
 
 #[derive(Serialize, Clone)]
 pub struct WindowEdge {
@@ -256,7 +261,7 @@ fn run(app: AppHandle, generation: u64) {
                 let _ = app.emit("snow:desktopState", state);
             }
         }
-        let delay = if last_change.elapsed() < Duration::from_millis(1500) { 110 } else { 380 };
+        let delay = if last_change.elapsed() < Duration::from_millis(1500) { 16 } else { 250 };
         std::thread::sleep(Duration::from_millis(delay));
     }
 }
@@ -275,4 +280,13 @@ pub fn set_snow_active(app: AppHandle, active: bool) {
     let _ = std::thread::Builder::new()
         .name("dokiii-snow".into())
         .spawn(move || run(app, generation));
+}
+
+#[tauri::command]
+pub fn set_snow_front(app: AppHandle, front: bool) {
+    FRONT.store(front, Ordering::Relaxed);
+    let modal = app.state::<crate::state::AppState>().modal.load(Ordering::Relaxed);
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_always_on_top(front || modal);
+    }
 }

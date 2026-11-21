@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 
 const OWNER: &str = "buzzyfluxon";
-const REPO: &str = "dokiii-fluxon";
+const REPO: &str = "dokiii-rust";
 const CHECK_DELAY: Duration = Duration::from_secs(10);
 const CHECK_INTERVAL: Duration = Duration::from_secs(12 * 60 * 60);
 const MAX_DOWNLOAD_RETRIES: u32 = 2;

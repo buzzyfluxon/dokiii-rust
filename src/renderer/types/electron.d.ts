@@ -70,6 +70,15 @@ export interface ElectronAPI {
   getWallpaperColors(): Promise<WallpaperPalette>;
   onWallpaperColorsUpdated(callback: (palette: WallpaperPalette) => void): () => void;
   setSnowActive(active: boolean): Promise<void>;
+  setSnowFront(front: boolean): Promise<void>;
+  openControlCenter(tab?: string): Promise<void>;
+  controlCenterReady(): Promise<string>;
+  closeControlCenter(): Promise<void>;
+  minimizeControlCenter(): Promise<void>;
+  toggleMaximizeControlCenter(): Promise<void>;
+  dragControlCenter(): Promise<void>;
+  onControlCenterTab(callback: (tab: string) => void): () => void;
+  onConfigSynced(callback: () => void): () => void;
   onSnowDesktopState(callback: (state: SnowDesktopState) => void): () => void;
   appReady?(): void;
   checkForUpdates(manual?: boolean): Promise<void>;

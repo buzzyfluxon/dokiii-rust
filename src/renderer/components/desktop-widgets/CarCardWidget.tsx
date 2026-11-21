@@ -50,12 +50,12 @@ export const CarCardWidget: React.FC<CarCardWidgetProps> = ({ size, data, onUpda
             cursor: 'pointer',
           }}
         >
-          {data?.imageUrl ? '' : 'Choose Image'}
+          {data?.imageUrl ? '' : 'Choose Photo'}
         </button>
         <input
           value={nameDraft}
           onChange={(e) => setNameDraft(e.target.value)}
-          placeholder="Car name"
+          placeholder="Title (optional)"
           style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: '8px', padding: '6px 8px', color: '#ffffff', fontSize: '12px', outline: 'none' }}
         />
         <input
@@ -114,7 +114,7 @@ export const CarCardWidget: React.FC<CarCardWidgetProps> = ({ size, data, onUpda
         </>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '13px', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-          Click to choose a car
+          Click to choose a photo
         </div>
       )}
       {hovered && (

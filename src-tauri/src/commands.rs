@@ -27,7 +27,12 @@ pub fn config_get(state: State<AppState>) -> Value {
 }
 
 #[tauri::command]
-pub fn config_save(state: State<AppState>, config: Map<String, Value>) -> Result<(), String> {
+pub fn config_save(
+    app: AppHandle,
+    window: tauri::WebviewWindow,
+    state: State<AppState>,
+    config: Map<String, Value>,
+) -> Result<(), String> {
     let mut cfg = match state.config.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner(),
@@ -35,7 +40,14 @@ pub fn config_save(state: State<AppState>, config: Map<String, Value>) -> Result
     for (key, value) in config {
         cfg.insert(key, value);
     }
-    config::write(&cfg).map_err(|e| e.to_string())
+    let result = config::write(&cfg).map_err(|e| e.to_string());
+    drop(cfg);
+    for (label, other) in app.webview_windows() {
+        if label != window.label() {
+            let _ = other.emit("config:synced", ());
+        }
+    }
+    result
 }
 
 #[tauri::command]
@@ -71,7 +83,7 @@ pub fn report_hit(state: State<AppState>, hit: bool) {
 pub fn set_modal_open(app: AppHandle, state: State<AppState>, open: bool) {
     state.modal.store(open, Ordering::Relaxed);
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_always_on_top(open);
+        let _ = window.set_always_on_top(open || crate::snow::front());
         if open {
             let _ = window.show();
             let _ = window.set_focus();

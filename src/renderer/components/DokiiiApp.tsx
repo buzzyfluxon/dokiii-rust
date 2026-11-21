@@ -11,6 +11,7 @@ import {
 import { IconClose, IconMinus, IconMaximize, IconRestore, IconRefresh } from './Icons';
 import { WidgetLibraryView } from './library/WidgetLibraryView';
 import appIcon from '../assets/icon.png';
+import { isControlCenterWindow } from '../platform/windowKind';
 import './dokiii-app.css';
 
 export const DokiiiApp: React.FC = () => {
@@ -47,7 +48,32 @@ export const DokiiiApp: React.FC = () => {
   const [newProfileName, setNewProfileName] = useState('');
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [editNameInput, setEditNameInput] = useState('');
-  const [isMaximized, setIsMaximized] = useState(true);
+  const standalone = isControlCenterWindow();
+  const [isMaximized, setIsMaximized] = useState(!standalone);
+  const [closing, setClosing] = useState(false);
+
+  const handleClose = () => {
+    if (!standalone) {
+      closeDokiiiApp();
+      return;
+    }
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(() => closeDokiiiApp(), 210);
+  };
+  const handleMinimize = () => {
+    if (standalone) void window.electronAPI.minimizeControlCenter();
+    else closeDokiiiApp();
+  };
+  const handleMaximize = () => {
+    if (standalone) void window.electronAPI.toggleMaximizeControlCenter();
+    setIsMaximized((v) => !v);
+  };
+  const handleDrag = (e: React.MouseEvent) => {
+    if (!standalone || e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('button, input, select, textarea, a')) return;
+    void window.electronAPI.dragControlCenter();
+  };
   const [sysMetrics, setSysMetrics] = useState<{ cpu: number | null; ram: number | null; ssd: number | null }>({
     cpu: null,
     ram: null,
@@ -873,7 +899,7 @@ export const DokiiiApp: React.FC = () => {
             <div className="dokiii-row">
               <div className="dokiii-row-label">
                 <span className="dokiii-row-name">Snowballs</span>
-                <span className="dokiii-row-desc">Snowballs form on the snow pile. Drag them around and stack three to build a snowman</span>
+                <span className="dokiii-row-desc">Move your cursor through a snow pile to roll a snowball that grows as it rolls. Stack three to build a snowman</span>
               </div>
               <div
                 className={`dokiii-toggle ${dock.snow?.snowballs !== false ? 'active' : ''}`}
@@ -896,6 +922,22 @@ export const DokiiiApp: React.FC = () => {
                 onClick={() => {
                   const snow = { ...DEFAULT_SNOW_CONFIG, ...(dock.snow || {}) };
                   updateConfig({ snow: { ...snow, onWindows: !snow.onWindows } });
+                }}
+              >
+                <div className="dokiii-toggle-handle" />
+              </div>
+            </div>
+
+            <div className="dokiii-row">
+              <div className="dokiii-row-label">
+                <span className="dokiii-row-name">Snow in Front of Windows</span>
+                <span className="dokiii-row-desc">Off keeps snow behind your windows. On lets it fall over them and lifts DOKIII above other windows</span>
+              </div>
+              <div
+                className={`dokiii-toggle ${dock.snow?.inFront ? 'active' : ''}`}
+                onClick={() => {
+                  const snow = { ...DEFAULT_SNOW_CONFIG, ...(dock.snow || {}) };
+                  updateConfig({ snow: { ...snow, inFront: !snow.inFront } });
                 }}
               >
                 <div className="dokiii-toggle-handle" />
@@ -1009,7 +1051,7 @@ export const DokiiiApp: React.FC = () => {
           className="dokiii-btn secondary"
           onClick={() => {
             try {
-              window.electronAPI?.openUrl('https://github.com/buzzyfluxon/dokiii-fluxon');
+              window.electronAPI?.openUrl('https://github.com/buzzyfluxon/dokiii-rust');
             } catch (_) {}
           }}
         >
@@ -1078,7 +1120,10 @@ export const DokiiiApp: React.FC = () => {
   ];
 
   return (
-    <div className="dokiii-app-backdrop" onClick={closeDokiiiApp}>
+    <div
+      className={`dokiii-app-backdrop${standalone ? ' dokiii-app-standalone' : ''}${closing ? ' is-closing' : ''}`}
+      onClick={standalone ? undefined : closeDokiiiApp}
+    >
       <div
         className={`dokiii-window${isMaximized ? ' is-maximized' : ''}${isLiquidGlass ? ' liquid-glass-active' : ''}`}
         onClick={(e) => e.stopPropagation()}
@@ -1092,20 +1137,20 @@ export const DokiiiApp: React.FC = () => {
             : undefined
         }
       >
-        <div className="dokiii-sidebar">
+        <div className="dokiii-sidebar" onMouseDown={handleDrag}>
           <div className="dokiii-window-controls">
-            <button className="dokiii-control-dot close" onClick={closeDokiiiApp} title="Close">
+            <button className="dokiii-control-dot close" onClick={handleClose} title="Close">
               <svg width="6" height="6" viewBox="0 0 6 6" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
                 <line x1="1" y1="1" x2="5" y2="5" />
                 <line x1="5" y1="1" x2="1" y2="5" />
               </svg>
             </button>
-            <button className="dokiii-control-dot minimize" onClick={closeDokiiiApp} title="Minimize">
+            <button className="dokiii-control-dot minimize" onClick={handleMinimize} title="Minimize">
               <svg width="6" height="6" viewBox="0 0 6 6" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
                 <line x1="1" y1="3" x2="5" y2="3" />
               </svg>
             </button>
-            <button className="dokiii-control-dot maximize" onClick={() => setIsMaximized(!isMaximized)} title={isMaximized ? 'Restore' : 'Zoom'}>
+            <button className="dokiii-control-dot maximize" onClick={handleMaximize} title={isMaximized ? 'Restore' : 'Zoom'}>
               {isMaximized ? (
                 <svg width="6" height="6" viewBox="0 0 6 6" fill="currentColor">
                   <polygon points="0,2 2,2 2,0" />
@@ -1121,9 +1166,10 @@ export const DokiiiApp: React.FC = () => {
           </div>
 
           <div className="dokiii-nav-list">
-            {navItems.map((item) => (
+            {navItems.map((item, index) => (
               <button
                 key={item.id}
+                style={{ ['--i' as string]: index }}
                 className={`dokiii-nav-item ${activeAppTab === item.id ? 'active' : ''}`}
                 onClick={() => setActiveAppTab(item.id)}
               >
@@ -1134,7 +1180,7 @@ export const DokiiiApp: React.FC = () => {
         </div>
 
         <div className="dokiii-main-content">
-          <div className="dokiii-content-header">
+          <div className="dokiii-content-header" onMouseDown={handleDrag}>
             <div>
               <span className="dokiii-content-title">
                 {navItems.find((i) => i.id === activeAppTab)?.label}
@@ -1151,23 +1197,23 @@ export const DokiiiApp: React.FC = () => {
               </span>
             </div>
             <div className="dokiii-header-actions">
-              <button className="dokiii-action-btn" onClick={closeDokiiiApp} title="Minimize">
+              <button className="dokiii-action-btn" onClick={handleMinimize} title="Minimize">
                 <IconMinus size={13} />
               </button>
               <button
                 className="dokiii-action-btn"
-                onClick={() => setIsMaximized(!isMaximized)}
+                onClick={handleMaximize}
                 title={isMaximized ? 'Restore' : 'Maximize'}
               >
                 {isMaximized ? <IconRestore size={12} /> : <IconMaximize size={12} />}
               </button>
-              <button className="dokiii-action-btn close" onClick={closeDokiiiApp} title="Close">
+              <button className="dokiii-action-btn close" onClick={handleClose} title="Close">
                 <IconClose size={13} />
               </button>
             </div>
           </div>
 
-          {renderActiveTabContent()}
+          <React.Fragment key={activeAppTab}>{renderActiveTabContent()}</React.Fragment>
         </div>
       </div>
     </div>

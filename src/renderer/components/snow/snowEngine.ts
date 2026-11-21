@@ -7,25 +7,32 @@ export interface SnowSettings {
   intensity: SnowIntensity;
   snowballs: boolean;
   onWindows: boolean;
+  inFront: boolean;
 }
 
 const COL = 4;
 const GRAVITY = 1500;
 const TAU = Math.PI * 2;
 const MAX_FLAKES = 340;
-const MAX_BITS = 90;
+const MAX_BITS = 520;
 const FLAKES_BY_INTENSITY: Record<SnowIntensity, number> = { low: 110, medium: 200, high: 320 };
 const LAYER_SIZE = [1.6, 2.6, 4];
 const LAYER_SPEED = [34, 58, 86];
 const LAYER_SWAY = [9, 15, 22];
 const LAYER_ALPHA = [0.6, 0.82, 1];
 const DEPOSIT_PROFILE = [4.6, 3.6, 2.3, 1.15, 0.5];
+const DEPOSIT_SCALE = 0.4;
+const TAPER = 22;
 const MAX_SLOPE = 2.4;
 const EDGE_LIMIT = 3.6;
 const BIT_GRAVITY = 720;
-const SCOOP_DISTANCE = 240;
-const MAX_BALLS = 5;
+const ROLL_START_DIST = 26;
+const ROLL_R0 = 4.5;
+const ROLL_RMAX = 21;
+const ROLL_GROW = 0.055;
 const MAX_BALLS_TOTAL = 8;
+const SHED_SPEED = 300;
+const PILE_LAG = 0.55;
 const MAX_SNOWMEN = 3;
 const FRAME_MIN_MS = 15;
 
@@ -56,6 +63,10 @@ interface Surface {
   el: HTMLElement | null;
   spillLeft: number;
   spillRight: number;
+  px: number;
+  py: number;
+  motionInit: boolean;
+  seed: number;
 }
 
 interface DragState {
@@ -83,6 +94,13 @@ interface Body {
   lastTx: number;
   lastTy: number;
   lastScale: number;
+  bw: number;
+  bh: number;
+  baseR: number;
+  rolling: boolean;
+  grain: HTMLDivElement | null;
+  rot: number;
+  lastRot: number;
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -98,7 +116,7 @@ export class SnowEngine {
   private ctx: CanvasRenderingContext2D | null = null;
   private width = 1920;
   private height = 1080;
-  private settings: SnowSettings = { enabled: false, intensity: 'medium', snowballs: true, onWindows: true };
+  private settings: SnowSettings = { enabled: false, intensity: 'medium', snowballs: true, onWindows: true, inFront: false };
   private desktopVisible = true;
   private running = false;
   private raf = 0;
@@ -157,7 +175,10 @@ export class SnowEngine {
 
   private bodies: Body[] = [];
   private nextId = 1;
-  private spawnIn = rand(10, 20);
+  private roller: Body | null = null;
+  private rollSurface: Surface | null = null;
+  private rollIdle = 0;
+  private tmpPile = new Float32Array(2);
   private stackTimers = new Map<number, number>();
   private ignoreHeld = 0;
 
@@ -191,6 +212,7 @@ export class SnowEngine {
     this.unsubscribe = null;
     try {
       window.electronAPI?.setSnowActive?.(false);
+      window.electronAPI?.setSnowFront?.(false);
     } catch (_) {}
     for (const b of this.bodies) b.el.remove();
     this.container = null;
@@ -241,6 +263,7 @@ export class SnowEngine {
       }
       for (const [id, s] of this.winSurfaces) {
         if (!seen.has(id)) {
+          if (s.alive) this.collapse(s);
           s.alive = false;
           s.fadeTarget = 0;
         }
@@ -269,6 +292,7 @@ export class SnowEngine {
   private syncTracker() {
     try {
       window.electronAPI?.setSnowActive?.(Boolean(this.container && this.settings.enabled));
+      window.electronAPI?.setSnowFront?.(Boolean(this.container && this.settings.enabled && this.settings.inFront));
     } catch (_) {}
   }
 
@@ -345,6 +369,10 @@ export class SnowEngine {
       el: null,
       spillLeft: 0,
       spillRight: 0,
+      px: 0,
+      py: 0,
+      motionInit: false,
+      seed: Math.random() * 100,
     };
   }
 
@@ -410,18 +438,19 @@ export class SnowEngine {
     for (let k = -4; k <= 4; k++) {
       const i = idx + k;
       if (i < 0 || i >= p.length) continue;
-      const v = DEPOSIT_PROFILE[Math.abs(k)] * scale;
-      const cap = s.maxH * this.capShape(i, p.length);
+      const v = DEPOSIT_PROFILE[Math.abs(k)] * scale * DEPOSIT_SCALE;
+      const cap = s.maxH * this.capShape(i, p.length, s.seed);
       p[i] += v * Math.max(0, 1 - p[i] / cap);
     }
   }
 
-  private capShape(i: number, len: number): number {
-    const dome = Math.pow(Math.sin((Math.PI * (i + 0.5)) / len), 0.7);
-    return Math.max(0.2, 0.45 + 0.55 * dome + 0.07 * Math.sin(i * 0.37));
+  private capShape(i: number, len: number, seed: number): number {
+    const dome = Math.pow(Math.sin((Math.PI * (i + 0.5)) / len), 0.6);
+    const lump = 0.13 * Math.sin(i * 0.23 + seed) + 0.07 * Math.sin(i * 0.61 + seed * 1.7);
+    return Math.max(0.25, 0.5 + 0.5 * dome + lump);
   }
 
-  private carve(s: Surface, x: number, r: number) {
+  private carve(s: Surface, x: number, r: number, amount = r * 0.55) {
     const idx = Math.round((x - s.x1) / COL);
     const reach = Math.ceil((r * 1.6) / COL);
     const p = s.pile;
@@ -429,8 +458,107 @@ export class SnowEngine {
       const i = idx + k;
       if (i < 0 || i >= p.length) continue;
       const fall = 1 - Math.abs(k) / (reach + 1);
-      p[i] = Math.max(0, p[i] - r * 0.55 * fall * fall);
+      p[i] = Math.max(0, p[i] - amount * fall * fall);
     }
+  }
+
+  private inSpan(s: Surface, x: number): boolean {
+    for (let i = 0; i < s.spans.length; i++) {
+      if (x >= s.x1 + s.spans[i].lo && x <= s.x1 + s.spans[i].hi) return true;
+    }
+    return false;
+  }
+
+  private shiftPile(s: Surface, shiftPx: number) {
+    const p = s.pile;
+    const n = p.length;
+    if (n < 4) return;
+    if (this.tmpPile.length < n) this.tmpPile = new Float32Array(n + 64);
+    const tmp = this.tmpPile;
+    const sc = Math.max(-n, Math.min(n, shiftPx / COL));
+    for (let i = 0; i < n; i++) {
+      const src = i - sc;
+      const i0 = Math.floor(src);
+      const f = src - i0;
+      const a = i0 >= 0 && i0 < n ? p[i0] : 0;
+      const b = i0 + 1 >= 0 && i0 + 1 < n ? p[i0 + 1] : 0;
+      tmp[i] = a * (1 - f) + b * f;
+    }
+    const dir = shiftPx < 0 ? -1 : 1;
+    let drops = 0;
+    for (let i = 0; i < n; i++) {
+      const x = s.x1 + i * COL;
+      if (this.inSpan(s, x)) {
+        p[i] = tmp[i];
+        continue;
+      }
+      const h = tmp[i];
+      p[i] = 0;
+      if (h > 0.35 && drops < 8) {
+        drops++;
+        this.emitBit(x, s.y - h, dir * rand(10, 40), rand(-20, 10), Math.min(3.2, 1.2 + h * 0.4), Math.min(1.2, 0.1 + h * 0.3));
+      }
+    }
+  }
+
+  private shed(s: Surface, vx: number, vy: number, speed: number) {
+    const frac = Math.min(0.55, (speed - SHED_SPEED) / 2200);
+    const p = s.pile;
+    let emitted = 0;
+    for (let i = 1; i < p.length - 2 && emitted < 14; i += 2) {
+      if (p[i] < 0.5) continue;
+      const x = s.x1 + i * COL;
+      if (!this.inSpan(s, x)) continue;
+      const take = p[i] * frac;
+      if (take < 0.15) continue;
+      p[i] -= take;
+      p[i + 1] = Math.max(0, p[i + 1] - take * 0.6);
+      const lift = vy < 0 ? vy * 0.35 : vy * 0.05;
+      this.emitBit(
+        x,
+        s.y - p[i] - 1,
+        vx * 0.12 + rand(-30, 30),
+        lift + rand(-25, 15),
+        Math.min(3.3, 1.2 + take * 0.55),
+        Math.min(1.3, 0.08 + take * 0.28)
+      );
+      emitted++;
+    }
+  }
+
+  private collapse(s: Surface) {
+    if (s.peak < 0.5) return;
+    const p = s.pile;
+    let n = 0;
+    for (let i = 0; i < p.length && n < 26; i += 3) {
+      if (p[i] < 0.6) continue;
+      const x = s.x1 + i * COL;
+      if (!this.inSpan(s, x)) continue;
+      this.emitBit(x, s.y - p[i], rand(-30, 30), rand(-20, 20), Math.min(3.4, 1.4 + p[i] * 0.3), Math.min(1.2, 0.1 + p[i] * 0.3));
+      n++;
+    }
+    p.fill(0);
+    s.peak = 0;
+  }
+
+  private applyMotion(s: Surface, dt: number) {
+    if (s.kind === 'ground') return;
+    if (!s.motionInit) {
+      s.motionInit = true;
+      s.px = s.x1;
+      s.py = s.y;
+      return;
+    }
+    const dx = s.x1 - s.px;
+    const dy = s.y - s.py;
+    s.px = s.x1;
+    s.py = s.y;
+    if (s.fadeTarget === 0 || s.peak < 0.4 || dt <= 0) return;
+    if (Math.abs(dx) > 0.12) this.shiftPile(s, -dx * PILE_LAG);
+    const vx = dx / dt;
+    const vy = dy / dt;
+    const speed = Math.hypot(vx * 0.7, vy);
+    if (speed > SHED_SPEED) this.shed(s, vx, vy, speed);
   }
 
   private emitBit(x: number, y: number, vx: number, vy: number, size: number, mass: number) {
@@ -571,6 +699,7 @@ export class SnowEngine {
     }
     for (const [el, s] of this.domSurfaces) {
       if (s.seen !== frame) {
+        if (s.alive) this.collapse(s);
         s.alive = false;
         s.fadeTarget = 0;
         if (s.fade < 0.03 || !el.isConnected) this.domSurfaces.delete(el);
@@ -579,7 +708,7 @@ export class SnowEngine {
   }
 
   private syncWindows(dt: number) {
-    const k = 1 - Math.exp(-dt * 20);
+    const k = 1 - Math.exp(-dt * 38);
     for (const [id, s] of this.winSurfaces) {
       s.x1 += (s.tx1 - s.x1) * k;
       s.x2 += (s.tx2 - s.x2) * k;
@@ -600,7 +729,7 @@ export class SnowEngine {
 
   private topAt(s: Surface, x: number): number | null {
     if (!this.spanAt(s, x)) return null;
-    return s.y - this.heightAt(s, x) * 0.7;
+    return s.y - this.heightAt(s, x) * 0.9;
   }
 
   private step(dt: number) {
@@ -616,6 +745,7 @@ export class SnowEngine {
     for (const s of this.domSurfaces.values()) s.fade += (s.fadeTarget - s.fade) * Math.min(1, dt * 9);
     for (const s of this.winSurfaces.values()) s.fade += (s.fadeTarget - s.fade) * Math.min(1, dt * 6);
     this.collectActive();
+    for (let j = 0; j < this.active.length; j++) this.applyMotion(this.active[j], dt);
 
     const t = this.time;
     const gust = Math.sin(t * 0.13) * 8 + Math.sin(t * 0.37 + 1.3) * 5 + Math.sin(t * 0.91 + 0.4) * 2.5;
@@ -670,7 +800,6 @@ export class SnowEngine {
 
     this.scoop(dt);
     this.stepBodies(dt);
-    this.maybeSpawnBall(dt);
   }
 
   private findHit(x: number, prevY: number, newY: number): Surface | null {
@@ -691,27 +820,39 @@ export class SnowEngine {
 
   private scoop(dt: number) {
     this.scoopCool = Math.max(0, this.scoopCool - dt);
-    if (!this.settings.snowballs) return;
+    if (!this.settings.snowballs) {
+      this.cursorDirty = false;
+      if (this.roller) this.endRoll(0);
+      return;
+    }
+    if (this.roller) this.rollIdle += dt;
     if (!this.cursorDirty) {
       this.scoopDist = Math.max(0, this.scoopDist - dt * 60);
+      if (this.roller && this.rollIdle > 0.3) this.endRoll(0);
       return;
     }
     this.cursorDirty = false;
     const x = this.cursorX;
     const y = this.cursorY;
-    const moved = Math.min(160, Math.hypot(x - this.lastCx, y - this.lastCy));
+    const dx = x - this.lastCx;
+    const moved = Math.min(200, Math.hypot(dx, y - this.lastCy));
     this.lastCx = x;
     this.lastCy = y;
     if (moved < 0.5) return;
+    if (this.roller) {
+      this.rollStep(this.roller, x, y, dx, moved);
+      return;
+    }
+    if (this.scoopCool > 0) return;
     for (const b of this.bodies) {
       if (Math.abs(x - b.x) < b.w / 2 + 4 && y > b.by - b.h - 4 && y < b.by + 4) return;
     }
     let target: Surface | null = null;
     for (const s of this.active) {
-      if (!this.spanAt(s, x)) continue;
+      if (s.fade < 0.6 || !this.spanAt(s, x)) continue;
       const h = this.heightAt(s, x);
-      if (h < 4) continue;
-      if (y >= s.y - h - 12 && y <= s.y + 8) {
+      if (h < 3) continue;
+      if (y >= s.y - h - 14 && y <= s.y + 10) {
         target = s;
         break;
       }
@@ -721,15 +862,60 @@ export class SnowEngine {
       return;
     }
     this.scoopDist += moved;
-    if (this.scoopDist < SCOOP_DISTANCE || this.scoopCool > 0) return;
-    if (this.bodies.length >= MAX_BALLS_TOTAL) return;
-    const h = this.heightAt(target, x);
-    const r = Math.max(11, Math.min(19, 8 + h * 0.75));
-    this.carve(target, x, r);
-    const top = this.topAt(target, x);
-    this.createBall(x, top === null ? target.y : top, r, 0);
+    if (this.scoopDist < ROLL_START_DIST) return;
+    this.startRoll(target, x);
+  }
+
+  private startRoll(s: Surface, x: number) {
+    const balls = this.bodies.filter((b) => b.kind === 'ball');
+    if (balls.length >= MAX_BALLS_TOTAL) this.removeBody(balls[0]);
+    const top = this.topAt(s, x);
+    const ball = this.createBall(x, top === null ? s.y : top, ROLL_R0, 1, ROLL_RMAX, true);
+    this.roller = ball;
+    this.rollSurface = s;
+    this.rollIdle = 0;
     this.scoopDist = 0;
-    this.scoopCool = 1.6;
+  }
+
+  private rollStep(ball: Body, x: number, y: number, dx: number, moved: number) {
+    const s = this.rollSurface;
+    if (!s || !s.alive || s.fade < 0.4 || !this.spanAt(s, x)) {
+      this.endRoll(dx);
+      return;
+    }
+    const h = this.heightAt(s, x);
+    if (h < 1.2 || y < s.y - h - 44 || y > s.y + 26) {
+      this.endRoll(dx);
+      return;
+    }
+    this.rollIdle = 0;
+    ball.x += (x - ball.x) * 0.6;
+    const grown = Math.min(ROLL_RMAX, ball.r + ROLL_GROW * moved * (h > 3 ? 1 : 0.4));
+    ball.r = grown;
+    ball.w = grown * 2;
+    ball.h = grown * 2;
+    ball.rot += dx / Math.max(4, grown);
+    this.carve(s, ball.x, grown, moved * 0.07);
+    const top = this.topAt(s, ball.x);
+    ball.by = (top === null ? s.y : top) + grown * 0.2;
+    if (grown >= ROLL_RMAX) this.endRoll(dx);
+  }
+
+  private endRoll(dx: number) {
+    const b = this.roller;
+    this.roller = null;
+    this.rollSurface = null;
+    this.scoopDist = 0;
+    this.scoopCool = 0.6;
+    if (!b) return;
+    b.rolling = false;
+    b.el.classList.remove('is-rolling');
+    if (b.r < 7) {
+      this.removeBody(b);
+      return;
+    }
+    b.vx = Math.max(-260, Math.min(260, dx * 30));
+    b.vy = 0;
   }
 
   private supportFor(b: Body, prevBy: number): { y: number; ball: Body | null; slide: number } {
@@ -768,7 +954,7 @@ export class SnowEngine {
   private stepBodies(dt: number) {
     for (const b of this.bodies) {
       if (b.grow < 1) b.grow = Math.min(1, b.grow + dt / 1.3);
-      if (b.drag) {
+      if (b.drag || b.rolling) {
         b.grounded = false;
         b.restOn = null;
         continue;
@@ -853,37 +1039,18 @@ export class SnowEngine {
     this.stackTimers = next;
   }
 
-  private maybeSpawnBall(dt: number) {
-    if (!this.settings.snowballs) return;
-    this.spawnIn -= dt;
-    if (this.spawnIn > 0) return;
-    this.spawnIn = rand(30, 70);
-    const balls = this.bodies.filter((b) => b.kind === 'ball').length;
-    const men = this.bodies.filter((b) => b.kind === 'man').length;
-    if (balls >= MAX_BALLS || balls + men * 3 >= 9) return;
-    const candidates = this.active.filter((s) => {
-      if (s.kind === 'ground' || s.peak < 2.5 || s.fade < 0.8) return false;
-      return s.spans.some((sp) => sp.hi - sp.lo >= 70);
-    });
-    const r = rand(13, 25);
-    if (candidates.length) {
-      const s = candidates[Math.floor(Math.random() * candidates.length)];
-      const sp = s.spans.find((p) => p.hi - p.lo >= 70) || s.spans[0];
-      const x = s.x1 + rand(sp.lo + r + 4, sp.hi - r - 4);
-      const top = this.topAt(s, x);
-      if (top !== null) {
-        this.createBall(x, top, r, 0);
-        return;
-      }
-    }
-    this.createBall(rand(80, this.width - 80), this.height - 4, r, 0);
-  }
-
-  private createBall(x: number, by: number, r: number, grow: number): Body {
+  private createBall(x: number, by: number, r: number, grow: number, baseR = r, rolling = false): Body {
     const el = document.createElement('div');
     el.className = 'snow-body snow-ball';
-    el.style.width = `${r * 2}px`;
-    el.style.height = `${r * 2}px`;
+    el.style.width = `${baseR * 2}px`;
+    el.style.height = `${baseR * 2}px`;
+    let grain: HTMLDivElement | null = null;
+    if (rolling) {
+      el.classList.add('is-rolling');
+      grain = document.createElement('div');
+      grain.className = 'snow-ball-grain';
+      el.appendChild(grain);
+    }
     const body: Body = {
       kind: 'ball',
       id: this.nextId++,
@@ -903,6 +1070,13 @@ export class SnowEngine {
       lastTx: NaN,
       lastTy: NaN,
       lastScale: NaN,
+      bw: baseR * 2,
+      bh: baseR * 2,
+      baseR,
+      rolling,
+      grain,
+      rot: 0,
+      lastRot: NaN,
     };
     this.bodies.push(body);
     this.container?.appendChild(el);
@@ -1046,6 +1220,13 @@ export class SnowEngine {
       lastTx: NaN,
       lastTy: NaN,
       lastScale: NaN,
+      bw: wTotal,
+      bh: hTotal,
+      baseR: A,
+      rolling: false,
+      grain: null,
+      rot: 0,
+      lastRot: NaN,
     };
     this.bodies.push(body);
     this.container?.appendChild(el);
@@ -1075,6 +1256,8 @@ export class SnowEngine {
   }
 
   private clearBodies() {
+    this.roller = null;
+    this.rollSurface = null;
     for (const b of this.bodies) b.el.remove();
     this.bodies = [];
     this.stackTimers.clear();
@@ -1199,7 +1382,9 @@ export class SnowEngine {
         const d = this.spriteSize[layer];
         for (let i = 0; i < n; i++) {
           if (this.fl[i] !== layer) continue;
-          ctx.drawImage(sprite, this.fx[i] - d / 2, this.fy[i] - d / 2);
+          const m = 0.75 + 0.5 * ((this.fp[i] * 1.9) % 1);
+          const dm = d * m;
+          ctx.drawImage(sprite, this.fx[i] - dm / 2, this.fy[i] - dm / 2, dm, dm);
         }
       } else {
         ctx.fillStyle = 'rgba(255,255,255,1)';
@@ -1230,7 +1415,7 @@ export class SnowEngine {
   private ensureSprites() {
     if (this.sprites.length) return;
     for (let layer = 0; layer < 3; layer++) {
-      const d = Math.ceil(LAYER_SIZE[layer] * 2 * 1.8);
+      const d = Math.ceil(LAYER_SIZE[layer] * 2 * 1.7);
       this.spriteSize.push(d);
       const canvas = document.createElement('canvas');
       canvas.width = d;
@@ -1242,21 +1427,28 @@ export class SnowEngine {
       }
       const grad = g.createRadialGradient(d / 2, d / 2, 0, d / 2, d / 2, d / 2);
       grad.addColorStop(0, 'rgba(255,255,255,1)');
-      grad.addColorStop(0.35, 'rgba(255,255,255,0.85)');
-      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      grad.addColorStop(0.5, 'rgba(255,255,255,0.95)');
+      grad.addColorStop(0.72, 'rgba(236,244,255,0.55)');
+      grad.addColorStop(1, 'rgba(220,234,255,0)');
       g.fillStyle = grad;
       g.fillRect(0, 0, d, d);
       this.sprites.push(canvas);
     }
   }
 
-  private tracePile(ctx: CanvasRenderingContext2D, s: Surface, lo: number, hi: number, lift: number) {
+  private tracePile(
+    ctx: CanvasRenderingContext2D,
+    s: Surface,
+    lo: number,
+    hi: number,
+    lift: number,
+    closed: boolean
+  ) {
     const xs = this.xs;
     const ys = this.ys;
     let n = 0;
     for (let x = lo; x < hi; x += COL) {
-      const t = Math.min(x - lo, hi - x) / 14;
-      const taper = t >= 1 ? 1 : t <= 0 ? 0 : t * (2 - t);
+      const taper = smooth(Math.min(x - lo, hi - x) / TAPER);
       const idx = (x - s.x1) / COL;
       const i0 = Math.max(0, Math.min(s.pile.length - 2, Math.floor(idx)));
       const f = Math.max(0, Math.min(1, idx - i0));
@@ -1269,16 +1461,22 @@ export class SnowEngine {
     ys[n] = s.y - lift;
     n++;
     if (n < 3) return false;
-    const base = s.y + 1.5;
+    const base = s.y + 2;
     ctx.beginPath();
-    ctx.moveTo(xs[0], base);
-    ctx.lineTo(xs[0], ys[0]);
+    if (closed) {
+      ctx.moveTo(xs[0], base);
+      ctx.lineTo(xs[0], ys[0]);
+    } else {
+      ctx.moveTo(xs[0], ys[0]);
+    }
     for (let i = 1; i < n - 1; i++) {
       ctx.quadraticCurveTo(xs[i], ys[i], (xs[i] + xs[i + 1]) / 2, (ys[i] + ys[i + 1]) / 2);
     }
     ctx.lineTo(xs[n - 1], ys[n - 1]);
-    ctx.lineTo(xs[n - 1], base);
-    ctx.closePath();
+    if (closed) {
+      ctx.lineTo(xs[n - 1], base);
+      ctx.closePath();
+    }
     return true;
   }
 
@@ -1289,13 +1487,24 @@ export class SnowEngine {
       const lo = Math.max(s.x1, s.x1 + s.spans[i].lo);
       const hi = Math.min(s.x2, s.x1 + s.spans[i].hi);
       if (hi - lo < 14) continue;
-      if (this.tracePile(ctx, s, lo, hi, 0)) {
-        ctx.fillStyle = 'rgba(176,200,232,0.95)';
+      if (this.tracePile(ctx, s, lo, hi, 2.4, true)) {
+        ctx.fillStyle = 'rgba(255,255,255,0.14)';
         ctx.fill();
       }
-      if (this.tracePile(ctx, s, lo, hi, 1.3)) {
-        ctx.fillStyle = 'rgba(248,251,255,0.98)';
+      if (this.tracePile(ctx, s, lo, hi, 0, true)) {
+        const grad = ctx.createLinearGradient(0, s.y - s.peak - 2, 0, s.y + 2);
+        grad.addColorStop(0, 'rgba(255,255,255,1)');
+        grad.addColorStop(0.55, 'rgba(243,248,255,0.99)');
+        grad.addColorStop(1, 'rgba(190,210,238,0.97)');
+        ctx.fillStyle = grad;
         ctx.fill();
+      }
+      if (this.tracePile(ctx, s, lo, hi, 0.6, false)) {
+        ctx.lineWidth = 1.3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+        ctx.stroke();
       }
     }
     ctx.globalAlpha = 1;
@@ -1303,9 +1512,13 @@ export class SnowEngine {
 
   private updateBodies() {
     for (const b of this.bodies) {
-      const tx = Math.round((b.x - b.w / 2) * 10) / 10;
-      const ty = Math.round((b.by - b.h) * 10) / 10;
-      const scale = b.kind === 'ball' ? 0.15 + 0.85 * smooth(b.grow) : 1;
+      const tx = Math.round((b.x - b.bw / 2) * 10) / 10;
+      const ty = Math.round((b.by - b.bh) * 10) / 10;
+      const scale = b.kind === 'ball' ? Math.round((b.r / b.baseR) * 1000) / 1000 : 1;
+      if (b.grain && b.rot !== b.lastRot) {
+        b.lastRot = b.rot;
+        b.grain.style.transform = `rotate(${b.rot}rad)`;
+      }
       if (tx === b.lastTx && ty === b.lastTy && scale === b.lastScale) continue;
       b.lastTx = tx;
       b.lastTy = ty;

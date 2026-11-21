@@ -11,6 +11,7 @@ import {
   DesktopWidgetType,
   WidgetDefinition,
 } from '../../../shared/constants';
+import { PRESET_IMAGES } from '../../../shared/presetAssets';
 import { renderDesktopWidgetContent } from '../desktop-widgets/renderWidgetContent';
 import { BASE_SIZE, FILL_TYPES, BARE_TYPES, MAX_TRANSPARENCY, widgetBackground } from '../../utils/widgetSurface';
 import {
@@ -98,6 +99,7 @@ export const WidgetLibraryView: React.FC = () => {
         items: WIDGET_REGISTRY.filter(
           (w) =>
             w.placement === mode &&
+            !w.hidden &&
             w.category === cat.id &&
             (!normalizedQuery ||
               w.name.toLowerCase().includes(normalizedQuery) ||
@@ -170,6 +172,7 @@ export const WidgetLibraryView: React.FC = () => {
           x: 0,
           y: 0,
           size: 'medium',
+          ...(type === 'car-card' ? { data: { imageUrl: PRESET_IMAGES.tower, name: 'Photo', subtitle: 'Click to change' } } : {}),
           ...(customDims ? { width: customDims.width, height: customDims.height } : {}),
         };
     const sizeBase = BASE_SIZE[base.size] || BASE_SIZE.small;
