@@ -184,3 +184,95 @@ pub fn get_battery_status() -> BatteryStatus {
 pub fn get_battery_status() -> BatteryStatus {
     BatteryStatus::default()
 }
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AppMemory {
+    core_mb: f64,
+    interface_mb: f64,
+    total_mb: f64,
+}
+
+#[cfg(windows)]
+fn working_set_bytes(pid: u32) -> u64 {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS};
+    use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+
+    unsafe {
+        let handle = match OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
+            Ok(handle) => handle,
+            Err(_) => return 0,
+        };
+        let mut counters = PROCESS_MEMORY_COUNTERS::default();
+        let size = std::mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32;
+        counters.cb = size;
+        let ok = GetProcessMemoryInfo(handle, &mut counters, size).is_ok();
+        let _ = CloseHandle(handle);
+        if ok {
+            counters.WorkingSetSize as u64
+        } else {
+            0
+        }
+    }
+}
+
+#[cfg(windows)]
+fn app_memory() -> AppMemory {
+    use std::collections::HashMap;
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Diagnostics::ToolHelp::{
+        CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
+    };
+
+    let own = std::process::id();
+    let mut children: HashMap<u32, Vec<u32>> = HashMap::new();
+    unsafe {
+        let snapshot = match CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) {
+            Ok(handle) => handle,
+            Err(_) => return AppMemory::default(),
+        };
+        let mut entry = PROCESSENTRY32W::default();
+        entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
+        if Process32FirstW(snapshot, &mut entry).is_ok() {
+            loop {
+                children.entry(entry.th32ParentProcessID).or_default().push(entry.th32ProcessID);
+                if Process32NextW(snapshot, &mut entry).is_err() {
+                    break;
+                }
+            }
+        }
+        let _ = CloseHandle(snapshot);
+    }
+
+    let core = working_set_bytes(own);
+    let mut interface: u64 = 0;
+    let mut queue: Vec<u32> = children.get(&own).cloned().unwrap_or_default();
+    let mut seen = std::collections::HashSet::new();
+    while let Some(pid) = queue.pop() {
+        if !seen.insert(pid) {
+            continue;
+        }
+        interface += working_set_bytes(pid);
+        if let Some(next) = children.get(&pid) {
+            queue.extend(next.iter().copied());
+        }
+    }
+
+    let mb = |bytes: u64| ((bytes as f64) / 1_048_576.0 * 10.0).round() / 10.0;
+    AppMemory {
+        core_mb: mb(core),
+        interface_mb: mb(interface),
+        total_mb: mb(core + interface),
+    }
+}
+
+#[cfg(not(windows))]
+fn app_memory() -> AppMemory {
+    AppMemory::default()
+}
+
+#[tauri::command]
+pub async fn get_app_memory() -> AppMemory {
+    tauri::async_runtime::spawn_blocking(app_memory).await.unwrap_or_default()
+}

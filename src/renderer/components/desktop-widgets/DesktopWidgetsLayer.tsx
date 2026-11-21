@@ -11,6 +11,7 @@ import {
 import { Rect, findFreeSpot, getDockReservedRect, rectsOverlap, resolveWidgetRect } from '../../utils/widgetPlacement';
 import { renderDesktopWidgetContent } from './renderWidgetContent';
 import { BASE_SIZE, FILL_TYPES, BARE_TYPES, widgetBackground } from '../../utils/widgetSurface';
+import { effectiveTint, tintCss } from '../../utils/widgetTint';
 import './desktop-widgets.css';
 
 const TAP_DISTANCE = 5;
@@ -458,10 +459,13 @@ export const DesktopWidgetsLayer: React.FC = () => {
               isLiquidGlass && desktopSample ? desktopSample.bgRgba : undefined
             );
 
+        const tint = isBare ? undefined : tintCss(effectiveTint(item, dock.widgetTint));
+        const tintVars = tint ? ({ '--widget-tint': tint } as React.CSSProperties) : {};
+
         return (
           <div
             key={item.id}
-            className={`desktop-widget-container size-${item.size} type-${item.type}${isBare ? ' is-bare' : ''} ${isDragging ? 'is-dragging' : ''} ${isResizing ? 'is-resizing' : ''} ${item.locked ? 'is-locked' : ''}${isLiquidGlass ? ' liquid-glass-active' : ''}`}
+            className={`desktop-widget-container${tint ? ' has-tint' : ''} size-${item.size} type-${item.type}${isBare ? ' is-bare' : ''} ${isDragging ? 'is-dragging' : ''} ${isResizing ? 'is-resizing' : ''} ${item.locked ? 'is-locked' : ''}${isLiquidGlass ? ' liquid-glass-active' : ''}`}
             style={{
               left: `${pos.x}px`,
               top: `${pos.y}px`,
@@ -479,6 +483,7 @@ export const DesktopWidgetsLayer: React.FC = () => {
                   }
                 : {}),
               ...(surfaceBackground ? { background: surfaceBackground } : {}),
+              ...tintVars,
             }}
             onPointerDown={(e) => handlePointerDown(item.id, e)}
             onPointerMove={handlePointerMove}

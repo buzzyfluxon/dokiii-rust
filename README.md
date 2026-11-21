@@ -40,6 +40,16 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
+## What's New in 2.1.4
+
+- **Widget Color**: Control Center > Desktop Widgets > Widget Color. Pick a color with the color pad, hue slider, strength slider, hex code or Apple-style swatches. Use a solid color or a gradient with an angle. Set it for all widgets or for one widget at a time. The color sits on top of the glass, so the blur and shine stay.
+- **DOKIII memory use**: Control Center > Home shows how much RAM DOKIII uses, split into the core app and the interface.
+- **Rounded logo**: the app icon, installer icon, tray icon and dock logo now have rounded corners.
+
+- **Snowballs need a click**: hold the left mouse button while moving through a snow pile to roll a snowball. Just moving the cursor no longer does anything. Pressing on a pile no longer clicks through to the desktop.
+- **Clear Snow**: a button in Control Center > Dock > Snowfall sweeps all the snow away with a soft left-to-right wipe.
+- **Control Center redesign**: macOS System Settings style, with a search field, colored icon tiles, grouped rows, iOS-style switches and a large title.
+
 ## What's New in 2.1.3
 
 - **Control Center opens instantly**: it prepares itself when you hover the dock logo and stays ready for a few minutes after you close it. The open and close animations now use only GPU-friendly motion, so they stay smooth.
@@ -120,7 +130,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.3`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.4`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

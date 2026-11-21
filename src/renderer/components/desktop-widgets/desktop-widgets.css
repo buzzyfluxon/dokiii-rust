@@ -298,3 +298,13 @@
   background: #0a84ff;
   color: #ffffff;
 }
+/* Color tint: an overlay above the glass surface, so blur, border and highlights stay intact */
+.desktop-widget-container.has-tint::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--widget-tint);
+  pointer-events: none;
+}

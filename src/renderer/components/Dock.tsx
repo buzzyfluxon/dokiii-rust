@@ -7,7 +7,7 @@ import WidgetWrapper from './WidgetWrapper';
 import { useDragReorder } from '../hooks/useDragReorder';
 import { WidgetId, WIDGET_IDS, DockAppItem } from '../../shared/constants';
 import { IconPlus, IconTrash, IconPlay } from './Icons';
-import dokiiiLogo from '../assets/dokiii-logo.jpg';
+import dokiiiLogo from '../assets/dokiii-logo.png';
 import StorageWidget from '../widgets/StorageWidget';
 import CurrencyWidget from '../widgets/CurrencyWidget';
 import NotesWidget from '../widgets/NotesWidget';

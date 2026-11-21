@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useConfigStore } from '../store/configStore';
 import { useLiquidGlassStore } from '../store/liquidGlassStore';
 import { IconClose, IconPlus, IconTrash, IconMinus, IconMaximize, IconRestore } from './Icons';
-import dokiiiLogo from '../assets/dokiii-logo.jpg';
+import dokiiiLogo from '../assets/dokiii-logo.png';
 import AddAppModal from './AddAppModal';
 import MacIcon from './MacIcon';
 import { DEFAULT_SNOW_CONFIG } from '../../shared/constants';

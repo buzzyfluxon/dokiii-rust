@@ -30,6 +30,11 @@ const SnowLayer: React.FC = () => {
     getSnowEngine().configure({ enabled, intensity, snowballs, onWindows, inFront });
   }, [initialized, enabled, intensity, snowballs, onWindows, inFront]);
 
+  useEffect(() => {
+    const off = window.electronAPI?.onSnowClear?.(() => getSnowEngine().clearSnow());
+    return () => off?.();
+  }, []);
+
   return (
     <div ref={containerRef} className="snow-layer" style={{ display: 'none' }}>
       <canvas ref={canvasRef} className="snow-canvas" />

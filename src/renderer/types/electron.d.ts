@@ -7,6 +7,7 @@ export interface ElectronAPI {
   emptyRecycleBin(): Promise<void>;
   openRecycleBin(): Promise<void>;
   getInstalledApps(): Promise<AppInfo[]>;
+  getAppMemory(): Promise<{ coreMb: number; interfaceMb: number; totalMb: number }>;
   getSystemMetrics(): Promise<{ cpu: number; ram: number; ssd: number }>;
   getBatteryStatus(): Promise<{ percent: number; isCharging: boolean; hasBattery: boolean }>;
   getAudioVolume(): Promise<{ volume: number; isMuted: boolean }>;
@@ -72,6 +73,8 @@ export interface ElectronAPI {
   onWallpaperColorsUpdated(callback: (palette: WallpaperPalette) => void): () => void;
   setSnowActive(active: boolean): Promise<void>;
   setSnowFront(front: boolean): Promise<void>;
+  clearSnow(): Promise<void>;
+  onSnowClear(callback: () => void): () => void;
   openControlCenter(tab?: string): Promise<void>;
   controlCenterReady(): Promise<{ tab: string; open: boolean }>;
   showControlCenter(): Promise<void>;

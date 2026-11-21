@@ -10,6 +10,7 @@ use crate::state::AppState;
 struct CursorPayload {
     x: f64,
     y: f64,
+    down: bool,
 }
 
 #[cfg(windows)]
@@ -46,6 +47,7 @@ pub fn start(app: AppHandle) {
 
 fn run(app: AppHandle) {
     let mut last = (i32::MIN, i32::MIN);
+    let mut last_down = false;
     let mut last_move = Instant::now();
     let mut capturing: Option<bool> = None;
 
@@ -79,16 +81,22 @@ fn run(app: AppHandle) {
             && cy < position.y + size.height as i32;
         let state = app.state::<AppState>();
 
-        if (cx, cy) != last {
-            last = (cx, cy);
-            last_move = Instant::now();
+        let down = primary_button_down();
+        let moved = (cx, cy) != last;
+        if moved || down != last_down {
+            last_down = down;
+            if moved {
+                last = (cx, cy);
+                last_move = Instant::now();
+            }
             if inside {
                 let payload = CursorPayload {
                     x: (cx - position.x) as f64 / scale,
                     y: (cy - position.y) as f64 / scale,
+                    down,
                 };
                 let _ = window.emit("dokiii://cursor", payload);
-            } else {
+            } else if moved {
                 state.js_hit.store(false, Ordering::Relaxed);
             }
         }

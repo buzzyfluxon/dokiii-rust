@@ -85,6 +85,14 @@ export const DESKTOP_WIDGET_DEFAULT_DIMS: Partial<Record<DesktopWidgetType, { wi
   'app-icon': { width: 100, height: 116 },
 };
 
+export interface WidgetTint {
+  hex: string;
+  hex2?: string;
+  gradient?: boolean;
+  angle?: number;
+  strength: number;
+}
+
 export interface DesktopWidgetItem {
   id: string;
   type: DesktopWidgetType;
@@ -98,6 +106,7 @@ export interface DesktopWidgetItem {
   pinned?: boolean;
   locked?: boolean;
   transparency?: number;
+  tint?: WidgetTint | null;
   data?: Record<string, any>;
 }
 
@@ -324,6 +333,7 @@ export interface WidgetProfile {
   dockWidgets: WidgetId[];
   pinnedApps: DockAppItem[];
   desktopWidgets: DesktopWidgetItem[];
+  widgetTint?: WidgetTint | null;
   dockConfig?: Partial<DockConfig>;
 }
 

@@ -3,7 +3,7 @@ import { useConfigStore } from '../../store/configStore';
 import { useLiquidGlassStore } from '../../store/liquidGlassStore';
 import { useMediaStore } from '../../store/mediaStore';
 import { useRenderProfile } from '../../profile';
-import dokiiiLogo from '../../assets/dokiii-logo.jpg';
+import dokiiiLogo from '../../assets/dokiii-logo.png';
 import {
   IconMusic,
   IconPlay,

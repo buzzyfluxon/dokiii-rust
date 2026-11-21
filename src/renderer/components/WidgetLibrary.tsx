@@ -4,7 +4,7 @@ import { useConfigStore } from '../store/configStore';
 import { useLiquidGlassStore } from '../store/liquidGlassStore';
 import { WIDGET_REGISTRY, WIDGET_CATEGORIES, WidgetCategory, WidgetId } from '../../shared/constants';
 import { WidgetIcon, IconSearch, IconGlobe, IconClose, IconMinus, IconMaximize, IconRestore } from './Icons';
-import dokiiiLogo from '../assets/dokiii-logo.jpg';
+import dokiiiLogo from '../assets/dokiii-logo.png';
 import AddWebsiteModal from './AddWebsiteModal';
 
 const WidgetLibrary: React.FC = () => {

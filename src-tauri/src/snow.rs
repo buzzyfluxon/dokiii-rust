@@ -290,3 +290,8 @@ pub fn set_snow_front(app: AppHandle, front: bool) {
         let _ = window.set_always_on_top(front || modal);
     }
 }
+
+#[tauri::command]
+pub fn clear_snow(app: AppHandle) {
+    let _ = app.emit_to("main", "snow:clear", ());
+}

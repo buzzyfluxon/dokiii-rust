@@ -94,6 +94,7 @@ interface Body {
   lastTx: number;
   lastTy: number;
   lastScale: number;
+  melting?: boolean;
   bw: number;
   bh: number;
   baseR: number;
@@ -162,8 +163,16 @@ export class SnowEngine {
     if (!detail) return;
     this.cursorX = detail.x;
     this.cursorY = detail.y;
+    const down = Boolean(detail.down);
+    if (down && !this.cursorDown) this.armed = this.pileAt(detail.x, detail.y) !== null;
+    if (!down) this.armed = false;
+    this.cursorDown = down;
     this.cursorDirty = true;
   };
+  private cursorDown = false;
+  private armed = false;
+  private clearT = -1;
+  private clearPrev = -120;
 
   private ground: Surface | null = null;
   private domSurfaces = new Map<HTMLElement, Surface>();
@@ -196,6 +205,8 @@ export class SnowEngine {
     for (const b of this.bodies) container.appendChild(b.el);
     window.addEventListener('resize', this.resizeHandler);
     window.addEventListener('dokiii:cursor', this.cursorHandler);
+    (window as any).dokiiiSnowHit = (x: number, y: number) =>
+      this.settings.enabled && this.settings.snowballs && this.pileAt(x, y) !== null;
     document.addEventListener('visibilitychange', this.visibilityHandler);
     this.unsubscribe =
       window.electronAPI?.onSnowDesktopState?.((state) => this.applyDesktopState(state)) || null;
@@ -207,6 +218,7 @@ export class SnowEngine {
     this.stopLoop();
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('dokiii:cursor', this.cursorHandler);
+    (window as any).dokiiiSnowHit = undefined;
     document.removeEventListener('visibilitychange', this.visibilityHandler);
     this.unsubscribe?.();
     this.unsubscribe = null;
@@ -746,6 +758,7 @@ export class SnowEngine {
     for (const s of this.winSurfaces.values()) s.fade += (s.fadeTarget - s.fade) * Math.min(1, dt * 6);
     this.collectActive();
     for (let j = 0; j < this.active.length; j++) this.applyMotion(this.active[j], dt);
+    if (this.clearT >= 0) this.stepClear(dt);
 
     const t = this.time;
     const gust = Math.sin(t * 0.13) * 8 + Math.sin(t * 0.37 + 1.3) * 5 + Math.sin(t * 0.91 + 0.4) * 2.5;
@@ -825,6 +838,12 @@ export class SnowEngine {
       if (this.roller) this.endRoll(0);
       return;
     }
+    if (!this.cursorDown || !this.armed) {
+      if (this.roller) this.endRoll(0);
+      this.scoopDist = 0;
+      this.cursorDirty = false;
+      return;
+    }
     if (this.roller) this.rollIdle += dt;
     if (!this.cursorDirty) {
       this.scoopDist = Math.max(0, this.scoopDist - dt * 60);
@@ -847,16 +866,7 @@ export class SnowEngine {
     for (const b of this.bodies) {
       if (Math.abs(x - b.x) < b.w / 2 + 4 && y > b.by - b.h - 4 && y < b.by + 4) return;
     }
-    let target: Surface | null = null;
-    for (const s of this.active) {
-      if (s.fade < 0.6 || !this.spanAt(s, x)) continue;
-      const h = this.heightAt(s, x);
-      if (h < 3) continue;
-      if (y >= s.y - h - 14 && y <= s.y + 10) {
-        target = s;
-        break;
-      }
-    }
+    const target = this.pileAt(x, y);
     if (!target) {
       this.scoopDist = Math.max(0, this.scoopDist - moved * 0.6);
       return;
@@ -864,6 +874,53 @@ export class SnowEngine {
     this.scoopDist += moved;
     if (this.scoopDist < ROLL_START_DIST) return;
     this.startRoll(target, x);
+  }
+
+  private pileAt(x: number, y: number): Surface | null {
+    for (const s of this.active) {
+      if (s.fade < 0.6 || !this.spanAt(s, x)) continue;
+      const h = this.heightAt(s, x);
+      if (h < 3) continue;
+      if (y >= s.y - h - 14 && y <= s.y + 10) return s;
+    }
+    return null;
+  }
+
+  clearSnow() {
+    this.clearT = 0;
+    this.clearPrev = -120;
+  }
+
+  private stepClear(dt: number) {
+    this.clearT += dt;
+    const t = Math.min(1, this.clearT / 1.15);
+    const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const front = -120 + eased * (this.width + 280);
+    const prev = this.clearPrev;
+    this.clearPrev = front;
+    const decay = Math.pow(0.0008, dt);
+    for (const s of this.active) {
+      const p = s.pile;
+      for (let i = 0; i < p.length; i++) {
+        const h = p[i];
+        if (h <= 0.02) continue;
+        const x = s.x1 + i * COL;
+        if (x > front) continue;
+        if (x > prev && h > 1.4 && Math.random() < 0.22) {
+          this.emitBit(x, s.y - h, rand(10, 70), rand(-110, -30), 1.2 + Math.random() * 1.6, 0);
+        }
+        const next = h * decay;
+        p[i] = next < 0.03 ? 0 : next;
+      }
+    }
+    for (const b of this.bodies) {
+      if (!b.melting && b.x <= front) {
+        b.melting = true;
+        b.el.classList.add('is-melting');
+        window.setTimeout(() => this.removeBody(b), 420);
+      }
+    }
+    if (t >= 1) this.clearT = -1;
   }
 
   private startRoll(s: Surface, x: number) {

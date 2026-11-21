@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useUpdaterStore } from '../../store/updaterStore';
 import { IconClose } from '../Icons';
-import dokiiiLogo from '../../assets/dokiii-logo.jpg';
+import dokiiiLogo from '../../assets/dokiii-logo.png';
 import './update-notification.css';
 
 export const UpdateNotification: React.FC = () => {
