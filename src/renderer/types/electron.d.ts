@@ -15,6 +15,7 @@ export interface ElectronAPI {
   selectAppFile(): Promise<{ name: string; path: string; icon?: string } | null>;
   getAppIcon(filePath: string): Promise<string | null>;
   selectImageFile(): Promise<string | null>;
+  savePhoto(data: string, ext: string): Promise<string | null>;
   cacheImage(url: string): Promise<string | null>;
   fetchFavicon(url: string): Promise<string | null>;
   pickIconImage(): Promise<string | null>;
@@ -72,13 +73,16 @@ export interface ElectronAPI {
   setSnowActive(active: boolean): Promise<void>;
   setSnowFront(front: boolean): Promise<void>;
   openControlCenter(tab?: string): Promise<void>;
-  controlCenterReady(): Promise<string>;
+  controlCenterReady(): Promise<{ tab: string; open: boolean }>;
+  showControlCenter(): Promise<void>;
+  prewarmControlCenter(): Promise<void>;
   closeControlCenter(): Promise<void>;
   minimizeControlCenter(): Promise<void>;
   toggleMaximizeControlCenter(): Promise<void>;
   dragControlCenter(): Promise<void>;
-  onControlCenterTab(callback: (tab: string) => void): () => void;
+  onControlCenterOpen(callback: (tab: string) => void): () => void;
   onConfigSynced(callback: () => void): () => void;
+  onAudioChanged(callback: (state: { volume: number; isMuted: boolean }) => void): () => void;
   onSnowDesktopState(callback: (state: SnowDesktopState) => void): () => void;
   appReady?(): void;
   checkForUpdates(manual?: boolean): Promise<void>;

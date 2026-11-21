@@ -6,6 +6,7 @@ mod bin;
 mod commands;
 mod config;
 mod control_center;
+mod photos;
 mod cursor;
 mod display;
 mod filesystem;
@@ -72,6 +73,8 @@ fn main() {
             snow::set_snow_active,
             control_center::open_control_center,
             control_center::cc_ready,
+            control_center::cc_show,
+            control_center::prewarm_control_center,
             control_center::cc_close,
             control_center::cc_minimize,
             control_center::cc_toggle_maximize,
@@ -84,6 +87,7 @@ fn main() {
             apps::get_app_icon,
             apps::select_app_file,
             apps::select_image_file,
+            photos::save_photo,
             apps::pick_icon_image,
             netimg::cache_image,
             netimg::fetch_favicon,
@@ -106,6 +110,7 @@ fn main() {
             tray::create(&handle)?;
             wallpaper::start_watcher(handle.clone());
             updater::start(handle.clone());
+            audio::start_watcher(handle.clone());
             cursor::start(handle);
             Ok(())
         })

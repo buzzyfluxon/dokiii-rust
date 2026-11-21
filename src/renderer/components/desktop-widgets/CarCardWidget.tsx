@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DesktopWidgetSize } from '../../../shared/constants';
 import { IconPencil } from '../Icons';
+import { hasFiles, importImageFile, isImageFile, pickImageFromDialog } from '../../utils/photoImport';
 
 interface CarCardData {
   imageUrl?: string;
@@ -17,15 +18,62 @@ interface CarCardWidgetProps {
 export const CarCardWidget: React.FC<CarCardWidgetProps> = ({ size, data, onUpdateData }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [nameDraft, setNameDraft] = useState(data?.name || '');
   const [subtitleDraft, setSubtitleDraft] = useState(data?.subtitle || '');
 
   const pickImage = async () => {
     try {
-      const url = await window.electronAPI?.selectImageFile?.();
+      const url = await pickImageFromDialog();
       if (url) onUpdateData({ imageUrl: url });
     } catch (_) {}
   };
+
+  const dropProps = {
+    onDragEnter: (e: React.DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      setDragOver(true);
+    },
+    onDragOver: (e: React.DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      setDragOver(true);
+    },
+    onDragLeave: (e: React.DragEvent) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragOver(false);
+    },
+    onDrop: async (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = Array.from(e.dataTransfer.files as FileList).find(isImageFile);
+      if (!file) return;
+      const url = await importImageFile(file);
+      if (url) onUpdateData({ imageUrl: url });
+    },
+  };
+
+  const dropOverlay = dragOver ? (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        borderRadius: '14px',
+        border: '2px dashed #0a84ff',
+        background: 'rgba(10,132,255,0.18)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: 600,
+        color: '#ffffff',
+        pointerEvents: 'none',
+      }}
+    >
+      Drop photo
+    </div>
+  ) : null;
 
   const save = () => {
     onUpdateData({ name: nameDraft.trim(), subtitle: subtitleDraft.trim() });
@@ -35,9 +83,11 @@ export const CarCardWidget: React.FC<CarCardWidgetProps> = ({ size, data, onUpda
   if (isEditing) {
     return (
       <div
+        {...dropProps}
         onPointerDown={(e) => e.stopPropagation()}
-        style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '8px' }}
+        style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', gap: '8px' }}
       >
+        {dropOverlay}
         <button
           onClick={pickImage}
           style={{
@@ -50,7 +100,7 @@ export const CarCardWidget: React.FC<CarCardWidgetProps> = ({ size, data, onUpda
             cursor: 'pointer',
           }}
         >
-          {data?.imageUrl ? '' : 'Choose Photo'}
+          {data?.imageUrl ? '' : 'Choose or drop a photo'}
         </button>
         <input
           value={nameDraft}
@@ -84,6 +134,7 @@ export const CarCardWidget: React.FC<CarCardWidgetProps> = ({ size, data, onUpda
 
   return (
     <div
+      {...dropProps}
       onClick={() => {
         setNameDraft(data?.name || '');
         setSubtitleDraft(data?.subtitle || '');
@@ -94,6 +145,7 @@ export const CarCardWidget: React.FC<CarCardWidgetProps> = ({ size, data, onUpda
       onPointerDown={(e) => e.stopPropagation()}
       style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', width: '100%', cursor: 'pointer' }}
     >
+      {dropOverlay}
       {data?.imageUrl ? (
         <>
           <div
@@ -114,7 +166,7 @@ export const CarCardWidget: React.FC<CarCardWidgetProps> = ({ size, data, onUpda
         </>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '13px', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-          Click to choose a photo
+          Click or drop a photo
         </div>
       )}
       {hovered && (

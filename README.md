@@ -40,9 +40,19 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
+## What's New in 2.1.3
+
+- **Control Center opens instantly**: it prepares itself when you hover the dock logo and stays ready for a few minutes after you close it. The open and close animations now use only GPU-friendly motion, so they stay smooth.
+
+## What's New in 2.1.2
+
+- **Halo is instant**: volume and mute changes show in the Halo right away, with no delay. Battery changes are picked up within about a second and a half.
+
 ## What's New in 2.1.1
 
 - **Fix**: the Control Center now opens reliably from the dock logo and the tray.
+- **Frosted glass**: the Control Center window now blurs what's behind it, like macOS.
+- **Photo widget**: Choose Photo works again, and you can drag and drop an image onto the widget.
 
 ## What's New in 2.1.0
 
@@ -110,7 +120,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.1`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.3`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

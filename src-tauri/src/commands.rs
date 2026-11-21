@@ -42,9 +42,9 @@ pub fn config_save(
     }
     let result = config::write(&cfg).map_err(|e| e.to_string());
     drop(cfg);
-    for (label, other) in app.webview_windows() {
+    for (label, _other) in app.webview_windows() {
         if label != window.label() {
-            let _ = other.emit("config:synced", ());
+            let _ = app.emit_to(label.as_str(), "config:synced", ());
         }
     }
     result

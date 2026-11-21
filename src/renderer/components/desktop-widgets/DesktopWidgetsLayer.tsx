@@ -1,3 +1,4 @@
+import { pickImageFromDialog } from '../../utils/photoImport';
 import React, { useState, useEffect, useRef } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import { useLiquidGlassStore } from '../../store/liquidGlassStore';
@@ -177,7 +178,7 @@ export const DesktopWidgetsLayer: React.FC = () => {
 
   const pickPhoto = async (item: DesktopWidgetItem) => {
     try {
-      const url = await window.electronAPI?.selectImageFile?.();
+      const url = await pickImageFromDialog();
       if (url) {
         updateDesktopWidgetData(item.id, { data: { ...(item.data || {}), imageUrl: url } });
       }

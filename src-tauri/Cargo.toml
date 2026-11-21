@@ -1,6 +1,6 @@
 [package]
 name = "dokiii"
-version = "2.1.1"
+version = "2.1.3"
 description = "DOKIII dock and desktop widgets"
 edition = "2021"
 rust-version = "1.77"

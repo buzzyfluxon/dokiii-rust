@@ -60,6 +60,10 @@ export function installTauriBridge(): boolean {
       const picked = await call<string | null>('select_image_file');
       return picked ? tauri.core.convertFileSrc(picked, 'asset') : null;
     },
+    savePhoto: async (data, ext) => {
+      const saved = await call<string | null>('save_photo', { data, ext });
+      return saved ? tauri.core.convertFileSrc(saved, 'asset') : null;
+    },
     cacheImage: (url) => call('cache_image', { url }),
     fetchFavicon: (url) => call('fetch_favicon', { url }),
     pickIconImage: () => call('pick_icon_image'),
@@ -101,13 +105,16 @@ export function installTauriBridge(): boolean {
     setSnowActive: (active) => call<void>('set_snow_active', { active }),
     setSnowFront: (front) => call<void>('set_snow_front', { front }),
     openControlCenter: (tab) => call<void>('open_control_center', { tab }),
-    controlCenterReady: () => call<string>('cc_ready'),
+    controlCenterReady: () => call<{ tab: string; open: boolean }>('cc_ready'),
+    showControlCenter: () => call<void>('cc_show'),
+    prewarmControlCenter: () => call<void>('prewarm_control_center'),
     closeControlCenter: () => call<void>('cc_close'),
     minimizeControlCenter: () => call<void>('cc_minimize'),
     toggleMaximizeControlCenter: () => call<void>('cc_toggle_maximize'),
     dragControlCenter: () => call<void>('cc_drag'),
-    onControlCenterTab: (callback) => subscribe<string>('cc:tab', callback),
+    onControlCenterOpen: (callback) => subscribe<string>('cc:open', callback),
     onConfigSynced: (callback) => subscribe('config:synced', () => callback()),
+    onAudioChanged: (callback) => subscribe<{ volume: number; isMuted: boolean }>('audio:changed', callback),
     onSnowDesktopState: (callback) => subscribe('snow:desktopState', callback),
     appReady: () => {
       void call<void>('app_ready');

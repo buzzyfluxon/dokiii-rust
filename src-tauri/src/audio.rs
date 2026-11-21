@@ -106,3 +106,49 @@ pub async fn toggle_audio_mute() -> bool {
     .await
     .unwrap_or(false)
 }
+
+#[cfg(windows)]
+pub fn start_watcher(app: tauri::AppHandle) {
+    use std::time::Duration;
+    use tauri::Emitter;
+
+    std::thread::spawn(move || {
+        let mut ep = endpoint().ok();
+        let mut last: Option<AudioState> = None;
+        let mut ticks: u32 = 0;
+        loop {
+            std::thread::sleep(Duration::from_millis(70));
+            ticks = ticks.wrapping_add(1);
+            if ticks % 100 == 0 || ep.is_none() {
+                ep = endpoint().ok();
+            }
+            let Some(endpoint) = ep.as_ref() else {
+                std::thread::sleep(Duration::from_millis(1500));
+                continue;
+            };
+            let (volume, muted) = unsafe { (endpoint.GetMasterVolumeLevelScalar(), endpoint.GetMute()) };
+            let (volume, muted) = match (volume, muted) {
+                (Ok(v), Ok(m)) => (v, m.as_bool()),
+                _ => {
+                    ep = None;
+                    continue;
+                }
+            };
+            let state = AudioState {
+                volume: (volume * 100.0).round().clamp(0.0, 100.0) as u32,
+                is_muted: muted,
+            };
+            let changed = match last {
+                Some(prev) => prev.volume != state.volume || prev.is_muted != state.is_muted,
+                None => false,
+            };
+            last = Some(state);
+            if changed {
+                let _ = app.emit("audio:changed", state);
+            }
+        }
+    });
+}
+
+#[cfg(not(windows))]
+pub fn start_watcher(_app: tauri::AppHandle) {}

@@ -14,7 +14,7 @@ import appIcon from '../assets/icon.png';
 import { isControlCenterWindow } from '../platform/windowKind';
 import './dokiii-app.css';
 
-export const DokiiiApp: React.FC = () => {
+export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => {
   const {
     dock,
     profiles,
@@ -59,8 +59,19 @@ export const DokiiiApp: React.FC = () => {
     }
     if (closing) return;
     setClosing(true);
-    window.setTimeout(() => closeDokiiiApp(), 210);
+    window.setTimeout(() => {
+      void window.electronAPI.closeControlCenter();
+      onClosed?.();
+      setClosing(false);
+    }, 210);
   };
+
+  useEffect(() => {
+    if (!standalone) return;
+    const onRequestClose = () => handleClose();
+    window.addEventListener('cc:request-close', onRequestClose);
+    return () => window.removeEventListener('cc:request-close', onRequestClose);
+  });
   const handleMinimize = () => {
     if (standalone) void window.electronAPI.minimizeControlCenter();
     else closeDokiiiApp();

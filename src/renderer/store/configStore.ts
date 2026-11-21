@@ -132,9 +132,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   },
   closeDokiiiApp: () => {
     if (isControlCenterWindow()) {
-      try {
-        void window.electronAPI.closeControlCenter();
-      } catch (_) {}
+      window.dispatchEvent(new Event('cc:request-close'));
       return;
     }
     set({ isDokiiiAppOpen: false });

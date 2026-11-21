@@ -89,33 +89,14 @@ export const Halo: React.FC = () => {
     if (!halo?.enabled) return;
 
     let mounted = true;
+    let tick = 0;
 
     const poll = async () => {
       if (!mounted) return;
+      tick++;
 
       if (halo.showSystemEvents) {
         try {
-          if (window.electronAPI?.getAudioVolume) {
-            const res = await window.electronAPI.getAudioVolume();
-            if (mounted && res) {
-              if (prevVolumeRef.current !== null && res.volume !== prevVolumeRef.current) {
-                triggerEphemeral({
-                  type: 'volume',
-                  title: `Volume ${res.volume}%`,
-                  value: res.volume,
-                });
-              }
-              if (prevMuteRef.current !== null && res.isMuted !== prevMuteRef.current) {
-                triggerEphemeral({
-                  type: 'mute',
-                  title: res.isMuted ? 'Muted' : 'Unmuted',
-                });
-              }
-              prevVolumeRef.current = res.volume;
-              prevMuteRef.current = res.isMuted;
-            }
-          }
-
           if (window.electronAPI?.getBatteryStatus) {
             const b = await window.electronAPI.getBatteryStatus();
             if (mounted && b && b.hasBattery) {
@@ -133,6 +114,8 @@ export const Halo: React.FC = () => {
           }
         } catch (_) {}
       }
+
+      if (tick % 2 === 0) return;
 
       try {
         if (halo.showScreenshots && window.electronAPI?.getRecentScreenshots) {
@@ -178,7 +161,7 @@ export const Halo: React.FC = () => {
     };
 
     poll();
-    const interval = setInterval(poll, 8000);
+    const interval = setInterval(poll, 1500);
 
     return () => {
       mounted = false;
@@ -191,6 +174,34 @@ export const Halo: React.FC = () => {
     halo?.showDownloads,
     triggerEphemeral,
   ]);
+
+  useEffect(() => {
+    if (!halo?.enabled || !halo.showSystemEvents) return;
+    let mounted = true;
+    window.electronAPI
+      ?.getAudioVolume?.()
+      .then((res) => {
+        if (!mounted || !res) return;
+        prevVolumeRef.current = res.volume;
+        prevMuteRef.current = res.isMuted;
+      })
+      .catch(() => {});
+    const off = window.electronAPI?.onAudioChanged?.((res) => {
+      if (!mounted) return;
+      if (prevVolumeRef.current !== null && res.volume !== prevVolumeRef.current) {
+        triggerEphemeral({ type: 'volume', title: `Volume ${res.volume}%`, value: res.volume }, 2200);
+      }
+      if (prevMuteRef.current !== null && res.isMuted !== prevMuteRef.current) {
+        triggerEphemeral({ type: 'mute', title: res.isMuted ? 'Muted' : 'Unmuted' }, 2200);
+      }
+      prevVolumeRef.current = res.volume;
+      prevMuteRef.current = res.isMuted;
+    });
+    return () => {
+      mounted = false;
+      off?.();
+    };
+  }, [halo?.enabled, halo?.showSystemEvents, triggerEphemeral]);
 
   useEffect(() => {
     if (isExpanded) {
