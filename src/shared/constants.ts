@@ -257,6 +257,7 @@ export const DEFAULT_DOCK_CONFIG = {
   desktopWidgetsVisible: true,
   activeProfileId: 'default',
   liquidGlassEnabled: false,
+  widgetTint: null as WidgetTint | null,
   musicAmbient: {
     enabled: false,
     intensity: 'medium' as 'low' | 'medium' | 'high',
