@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DOKIII Setup</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="scene" width="236" height="160"></canvas>
+
+  <header class="titlebar" data-tauri-drag-region>
+    <div class="titlebar-brand" data-tauri-drag-region>
+      <img src="logo.png" alt="" draggable="false" />
+      <span data-tauri-drag-region>DOKIII</span>
+    </div>
+    <div class="titlebar-buttons">
+      <button id="btn-min" aria-label="Minimize">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 5h8" stroke="currentColor" stroke-width="1" fill="none" /></svg>
+      </button>
+      <button id="btn-close" class="close" aria-label="Close">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1" fill="none" /></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="card" id="card" data-state="welcome">
+      <h1 id="title">DOKIII</h1>
+      <p class="lead" id="lead">Installs DOKIII for this account. No administrator needed.</p>
+
+      <div class="view view-welcome">
+        <div class="path-row">
+          <div class="path-block">
+            <span class="label">Install to</span>
+            <span class="path" id="path" title=""></span>
+          </div>
+          <button class="btn ghost" id="btn-change">Change…</button>
+        </div>
+
+        <label class="switch-row">
+          <input type="checkbox" id="shortcut" checked />
+          <span class="switch"><span class="knob"></span></span>
+          <span class="switch-label">Desktop shortcut</span>
+        </label>
+
+        <div class="actions">
+          <span class="version" id="version"></span>
+          <button class="btn primary" id="btn-install">Install</button>
+        </div>
+      </div>
+
+      <div class="view view-progress">
+        <div class="progress"><div class="bar"></div></div>
+        <p class="phase" id="phase">Preparing</p>
+      </div>
+
+      <div class="view view-done">
+        <div class="actions">
+          <span class="version" id="version-done"></span>
+          <div class="action-group">
+            <button class="btn ghost" id="btn-finish">Close</button>
+            <button class="btn primary" id="btn-launch">Launch DOKIII</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="view view-error">
+        <p class="error-text" id="error-text"></p>
+        <div class="actions">
+          <span class="version" id="version-error"></span>
+          <div class="action-group">
+            <button class="btn ghost" id="btn-error-close">Close</button>
+            <button class="btn primary" id="btn-retry">Try again</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="scene.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
