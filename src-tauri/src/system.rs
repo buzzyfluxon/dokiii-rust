@@ -248,11 +248,8 @@ fn trim_working_sets() {
 #[cfg(windows)]
 pub fn start_trimmer() {
     std::thread::spawn(|| {
-        std::thread::sleep(std::time::Duration::from_secs(10));
-        loop {
-            trim_working_sets();
-            std::thread::sleep(std::time::Duration::from_secs(30));
-        }
+        std::thread::sleep(std::time::Duration::from_secs(15));
+        trim_working_sets();
     });
 }
 

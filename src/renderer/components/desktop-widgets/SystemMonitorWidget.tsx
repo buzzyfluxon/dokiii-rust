@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DesktopWidgetSize } from '../../../shared/constants';
+import { useRefreshMultiplier } from '../../hooks/usePerformance';
 
 interface SystemMonitorProps {
   size: DesktopWidgetSize;
@@ -14,6 +15,8 @@ export const SystemMonitorWidget: React.FC<SystemMonitorProps> = ({ size = 'smal
 
   const fmt = (v: number | null) => (v === null ? '--' : `${v}%`);
 
+  const refreshMult = useRefreshMultiplier();
+
   useEffect(() => {
     let mounted = true;
     const fetchMetrics = async () => {
@@ -27,12 +30,12 @@ export const SystemMonitorWidget: React.FC<SystemMonitorProps> = ({ size = 'smal
       } catch (_) {}
     };
     fetchMetrics();
-    const timer = setInterval(fetchMetrics, 6000);
+    const timer = setInterval(fetchMetrics, 6000 * refreshMult);
     return () => {
       mounted = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [refreshMult]);
 
   const renderGaugeRings = (svgSize = 58) => {
     const center = svgSize / 2;

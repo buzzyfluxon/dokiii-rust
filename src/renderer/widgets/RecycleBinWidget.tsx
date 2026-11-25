@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRefreshMultiplier } from '../hooks/usePerformance';
 import { IconTrash } from '../components/Icons';
 
 export const RecycleBinWidget: React.FC = () => {
@@ -13,11 +14,13 @@ export const RecycleBinWidget: React.FC = () => {
     } catch {}
   };
 
+  const refreshMult = useRefreshMultiplier();
+
   useEffect(() => {
     fetchCount();
-    const interval = setInterval(fetchCount, 45000);
+    const interval = setInterval(fetchCount, 45000 * refreshMult);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshMult]);
 
   const handleClick = () => {
     try {

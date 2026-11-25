@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import { useMediaStore } from '../../store/mediaStore';
 import { extractPalette, FALLBACK_PALETTE } from '../../utils/extractPalette';
+import { resolveExtras } from '../../../shared/performance';
 import './musicAmbient.css';
 
 type IntensityKey = 'low' | 'medium' | 'high';
@@ -102,6 +103,7 @@ export const MusicAmbient: React.FC = () => {
   const preset = INTENSITY_PRESETS[(ambient?.intensity as IntensityKey) || 'medium'];
   const position = dock.position || 'bottom';
   const isPlaying = Boolean(mediaInfo.isPlaying);
+  const motion = resolveExtras(dock).ambientMotion;
 
   const rootStyle = {
     '--ambient-opacity': preset.opacity,
@@ -121,7 +123,7 @@ export const MusicAmbient: React.FC = () => {
 
   return (
     <div
-      className={`music-ambient-root ambient-${position}${isPlaying ? '' : ' ambient-paused'}`}
+      className={`music-ambient-root ambient-${position}${motion ? ' ambient-motion' : ''}${isPlaying ? '' : ' ambient-paused'}`}
       style={rootStyle}
       aria-hidden="true"
     >

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRefreshMultiplier } from '../hooks/usePerformance';
 import type { StorageInfo } from '../types/widget';
 
 const StorageWidget: React.FC = () => {
@@ -12,11 +13,13 @@ const StorageWidget: React.FC = () => {
     } catch {}
   };
 
+  const refreshMult = useRefreshMultiplier();
+
   useEffect(() => {
     fetchStorage();
-    const interval = setInterval(fetchStorage, 30000);
+    const interval = setInterval(fetchStorage, 30000 * refreshMult);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshMult]);
 
   const handleClick = () => {
     try {

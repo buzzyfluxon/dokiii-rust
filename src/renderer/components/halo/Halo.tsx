@@ -3,6 +3,7 @@ import { useConfigStore } from '../../store/configStore';
 import { useLiquidGlassStore } from '../../store/liquidGlassStore';
 import { useMediaStore } from '../../store/mediaStore';
 import { useRenderProfile } from '../../profile';
+import { useRefreshMultiplier } from '../../hooks/usePerformance';
 import dokiiiLogo from '../../assets/dokiii-logo.png';
 import {
   IconMusic,
@@ -85,6 +86,8 @@ export const Halo: React.FC = () => {
     }, durationMs);
   }, []);
 
+  const refreshMult = useRefreshMultiplier();
+
   useEffect(() => {
     if (!halo?.enabled) return;
 
@@ -161,7 +164,7 @@ export const Halo: React.FC = () => {
     };
 
     poll();
-    const interval = setInterval(poll, 1500);
+    const interval = setInterval(poll, 1500 * refreshMult);
 
     return () => {
       mounted = false;
@@ -173,6 +176,7 @@ export const Halo: React.FC = () => {
     halo?.showScreenshots,
     halo?.showDownloads,
     triggerEphemeral,
+    refreshMult,
   ]);
 
   useEffect(() => {

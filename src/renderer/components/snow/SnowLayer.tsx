@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import { DEFAULT_SNOW_CONFIG } from '../../../shared/constants';
 import { getSnowEngine } from './snowEngine';
+import { resolveExtras } from '../../../shared/performance';
 import './snow.css';
 
 const SnowLayer: React.FC = () => {
@@ -15,6 +16,7 @@ const SnowLayer: React.FC = () => {
   const snowballs = snow?.snowballs ?? DEFAULT_SNOW_CONFIG.snowballs;
   const onWindows = snow?.onWindows ?? DEFAULT_SNOW_CONFIG.onWindows;
   const inFront = snow?.inFront ?? DEFAULT_SNOW_CONFIG.inFront;
+  const fps = useConfigStore((s) => resolveExtras(s.dock).frameRate);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -27,8 +29,8 @@ const SnowLayer: React.FC = () => {
 
   useEffect(() => {
     if (!initialized) return;
-    getSnowEngine().configure({ enabled, intensity, snowballs, onWindows, inFront });
-  }, [initialized, enabled, intensity, snowballs, onWindows, inFront]);
+    getSnowEngine().configure({ enabled, intensity, snowballs, onWindows, inFront, fps });
+  }, [initialized, enabled, intensity, snowballs, onWindows, inFront, fps]);
 
   useEffect(() => {
     const off = window.electronAPI?.onSnowClear?.(() => getSnowEngine().clearSnow());

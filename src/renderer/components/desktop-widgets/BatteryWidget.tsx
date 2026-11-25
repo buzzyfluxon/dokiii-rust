@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRefreshMultiplier } from '../../hooks/usePerformance';
 import { DesktopWidgetSize } from '../../../shared/constants';
 
 interface BatteryProps {
@@ -11,6 +12,8 @@ export const BatteryWidget: React.FC<BatteryProps> = ({ size = 'small' }) => {
     isCharging: false,
     hasBattery: true,
   });
+
+  const refreshMult = useRefreshMultiplier();
 
   useEffect(() => {
     let mounted = true;
@@ -25,12 +28,12 @@ export const BatteryWidget: React.FC<BatteryProps> = ({ size = 'small' }) => {
       } catch (_) {}
     };
     fetchBattery();
-    const timer = setInterval(fetchBattery, 30000);
+    const timer = setInterval(fetchBattery, 30000 * refreshMult);
     return () => {
       mounted = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [refreshMult]);
 
   const renderBatteryRing = (ringSize = 54) => {
     const center = ringSize / 2;

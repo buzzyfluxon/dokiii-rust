@@ -60,6 +60,11 @@
   animation-duration: var(--ambient-duration);
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
+  animation-play-state: paused;
+}
+
+.music-ambient-root.ambient-motion .ambient-blob {
+  animation-play-state: running;
 }
 
 .music-ambient-root.ambient-paused .ambient-blob {

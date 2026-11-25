@@ -12,6 +12,7 @@ import Halo from './components/halo/Halo';
 import MusicAmbient from './components/ambient/MusicAmbient';
 import SnowLayer from './components/snow/SnowLayer';
 import UpdateNotification from './components/updater/UpdateNotification';
+import { useApplyPerformance } from './hooks/usePerformance';
 import Notice from './components/Notice';
 import './styles/global.css';
 import './styles/dock.css';
@@ -33,6 +34,7 @@ const PopoverContext = createContext<PopoverContextType>({
 export const usePopover = () => useContext(PopoverContext);
 
 const App: React.FC = () => {
+  useApplyPerformance();
   const initWidget = useWidgetStore((s) => s.init);
   const initConfig = useConfigStore((s) => s.init);
   const initLiquidGlass = useLiquidGlassStore((s) => s.init);

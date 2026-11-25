@@ -141,12 +141,40 @@ export function installTauriBridge(): boolean {
   };
 
   let lastHit = false;
-  subscribe<CursorPayload>('dokiii://cursor', ({ x, y, down }) => {
-    window.dispatchEvent(new CustomEvent('dokiii:cursor', { detail: { x, y, down: Boolean(down) } }));
+  let lastDown = false;
+  let lastTest = 0;
+  let pending: { x: number; y: number } | null = null;
+  let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const testHit = (x: number, y: number) => {
+    lastTest = performance.now();
     const hit = isInteractive(x, y);
     if (hit === lastHit) return;
     lastHit = hit;
     void call<void>('report_hit', { hit });
+  };
+
+  subscribe<CursorPayload>('dokiii://cursor', ({ x, y, down }) => {
+    const isDown = Boolean(down);
+    window.dispatchEvent(new CustomEvent('dokiii:cursor', { detail: { x, y, down: isDown } }));
+    const elapsed = performance.now() - lastTest;
+    if (elapsed >= 33 || isDown !== lastDown) {
+      lastDown = isDown;
+      pending = null;
+      testHit(x, y);
+      return;
+    }
+    pending = { x, y };
+    if (pendingTimer === null) {
+      pendingTimer = setTimeout(() => {
+        pendingTimer = null;
+        if (pending) {
+          const point = pending;
+          pending = null;
+          testHit(point.x, point.y);
+        }
+      }, 33 - elapsed);
+    }
   });
 
   return true;

@@ -8,6 +8,7 @@ export interface SnowSettings {
   snowballs: boolean;
   onWindows: boolean;
   inFront: boolean;
+  fps?: number;
 }
 
 const COL = 4;
@@ -34,7 +35,8 @@ const MAX_BALLS_TOTAL = 8;
 const SHED_SPEED = 300;
 const PILE_LAG = 0.55;
 const MAX_SNOWMEN = 3;
-const FRAME_MIN_MS = 15;
+const FRAME_MIN_MS_60 = 15;
+const FRAME_MIN_MS_30 = 31;
 
 interface Span {
   lo: number;
@@ -139,6 +141,7 @@ export class SnowEngine {
   private fvy = new Float32Array(MAX_FLAKES);
   private fl = new Uint8Array(MAX_FLAKES);
   private flakeCount = 0;
+  private frameMinMs = FRAME_MIN_MS_60;
 
   private bx = new Float32Array(MAX_BITS);
   private by = new Float32Array(MAX_BITS);
@@ -236,6 +239,7 @@ export class SnowEngine {
   configure(next: SnowSettings) {
     const prev = this.settings;
     this.settings = { ...next };
+    this.frameMinMs = (next.fps ?? 60) >= 60 ? FRAME_MIN_MS_60 : FRAME_MIN_MS_30;
     if (!next.enabled) {
       this.clearWorld();
     } else {
@@ -338,7 +342,7 @@ export class SnowEngine {
   private loop = (ts: number) => {
     if (!this.running) return;
     this.raf = requestAnimationFrame(this.loop);
-    if (this.lastTs && ts - this.lastTs < FRAME_MIN_MS) return;
+    if (this.lastTs && ts - this.lastTs < this.frameMinMs) return;
     const rawDt = this.lastTs ? (ts - this.lastTs) / 1000 : 0.0167;
     this.lastTs = ts;
     const dt = Math.min(rawDt, 0.05);

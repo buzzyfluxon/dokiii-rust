@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PerformanceTab from './performance/PerformanceTab';
 import { useConfigStore, DokiiiAppTab } from '../store/configStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useLiquidGlassStore } from '../store/liquidGlassStore';
@@ -1128,6 +1129,8 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
         return renderDockTab();
       case 'halo':
         return renderHaloTab();
+      case 'performance':
+        return <PerformanceTab />;
       case 'settings':
         return renderSettingsTab();
       case 'about':
@@ -1144,6 +1147,7 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
     { id: 'desktop', label: 'Desktop Widgets' },
     { id: 'dock', label: 'Dock' },
     { id: 'halo', label: 'Halo' },
+    { id: 'performance', label: 'Performance' },
     { id: 'settings', label: 'Settings' },
     { id: 'about', label: 'About' },
   ];
@@ -1236,6 +1240,7 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
                 {activeAppTab === 'desktop' && 'Desktop widget positioning and sizing'}
                 {activeAppTab === 'dock' && 'Customize dock magnification, style, and behavior'}
                 {activeAppTab === 'halo' && 'Configure the DOKIII Halo top-center dynamic desktop overlay'}
+                {activeAppTab === 'performance' && 'Presets and fine control over effects, animation and background work'}
                 {activeAppTab === 'settings' && 'System options'}
                 {activeAppTab === 'about' && 'DOKIII Information and Build Details'}
               </span>

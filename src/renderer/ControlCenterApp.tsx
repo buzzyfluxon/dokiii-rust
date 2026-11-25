@@ -4,12 +4,14 @@ import { useConfigStore, DokiiiAppTab } from './store/configStore';
 import { useLiquidGlassStore } from './store/liquidGlassStore';
 import { useUpdaterStore } from './store/updaterStore';
 import { DokiiiApp } from './components/DokiiiApp';
+import { useApplyPerformance } from './hooks/usePerformance';
 import './styles/global.css';
 import './styles/dock.css';
 import './styles/widgets.css';
 import './styles/widget-library.css';
 
 const ControlCenterApp: React.FC = () => {
+  useApplyPerformance();
   const initWidget = useWidgetStore((s) => s.init);
   const initConfig = useConfigStore((s) => s.init);
   const initLiquidGlass = useLiquidGlassStore((s) => s.init);

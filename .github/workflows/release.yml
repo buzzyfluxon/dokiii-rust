@@ -34,7 +34,9 @@ jobs:
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: |
+            src-tauri
+            installer/src-tauri
 
       - name: Install dependencies
         run: npm ci
@@ -60,17 +62,32 @@ jobs:
           $installer = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
           Copy-Item $installer.FullName DOKIII-Setup.exe
 
+      - name: Build setup wizard
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force installer/src-tauri/payload | Out-Null
+          Copy-Item DOKIII-Setup.exe installer/src-tauri/payload/DOKIII-Setup.exe
+          Push-Location installer/src-tauri
+          cargo tauri build --no-bundle
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Pop-Location
+          Copy-Item installer/src-tauri/target/release/dokiii-installer.exe DOKIII-Installer.exe
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: dokiii-installer
-          path: DOKIII-Setup.exe
+          path: |
+            DOKIII-Installer.exe
+            DOKIII-Setup.exe
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: DOKIII-Setup.exe
+          files: |
+            DOKIII-Installer.exe
+            DOKIII-Setup.exe
           generate_release_notes: true
           draft: false
           prerelease: false

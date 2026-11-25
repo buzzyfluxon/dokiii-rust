@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { MediaInfo } from '../types/widget';
 import { PROFILE, rc } from '../profile';
+import { getRefreshMultiplier } from '../hooks/usePerformance';
 
 interface MediaStoreState {
   mediaInfo: MediaInfo | null;
@@ -83,7 +84,7 @@ export const useMediaStore = create<MediaStoreState>((set, get) => {
         };
       });
 
-      const nextInterval = info?.isPlaying ? 1500 : 3000;
+      const nextInterval = (info?.isPlaying ? 1500 : 3000) * getRefreshMultiplier();
       scheduleNextPoll(nextInterval);
     } catch {
       scheduleNextPoll(3000);

@@ -24,6 +24,7 @@ export type DokiiiAppTab =
   | 'desktop'
   | 'dock'
   | 'halo'
+  | 'performance'
   | 'settings'
   | 'about';
 

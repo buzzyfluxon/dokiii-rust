@@ -27,16 +27,26 @@
 ## Download
 
 <p align="center">
-  <a href="https://github.com/buzzyfluxon/dokiii-rust/releases/latest/download/DOKIII-Setup.exe">
-    <img src="https://img.shields.io/badge/Download-DOKIII--Setup.exe-b39ddb?style=for-the-badge&logo=windows&logoColor=white" alt="Download DOKIII Installer" />
+  <a href="https://github.com/buzzyfluxon/dokiii-rust/releases/latest/download/DOKIII-Installer.exe">
+    <img src="https://img.shields.io/badge/Download-DOKIII--Installer.exe-b39ddb?style=for-the-badge&logo=windows&logoColor=white" alt="Download DOKIII Installer" />
   </a>
   <br/>
   <sub>Single installer &nbsp;•&nbsp; Windows 10/11 x64 &nbsp;•&nbsp; Choose your install folder</sub>
 </p>
 
-Download `DOKIII-Setup.exe` and run it. The installer lets you pick the install folder and sets up the shortcuts you choose. Windows SmartScreen may show a warning the first time because the app is not code-signed: select **More info**, then **Run anyway**.
+Download `DOKIII-Installer.exe` and run it. The setup window lets you pick the install folder and choose whether to add a desktop shortcut. `DOKIII-Setup.exe` is the plain installer the in-app updater uses. Windows SmartScreen may show a warning the first time because the app is not code-signed: select **More info**, then **Run anyway**.
 
 Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-rust/releases). The app checks this repository for updates.
+
+---
+
+## What's New in 2.2.0
+
+- **Performance page**: Control Center > Performance has five presets (Potato, Low, Medium, High, Ultra). Under them, every setting a preset changes is listed and can be changed on its own, so you can run Potato with Music Ambient on High. Settings that differ from the preset get a dot, and one button resets back to the preset.
+- **New settings**: glass blur on or off, ambient motion, snow frame rate (30 or 60) and background refresh rate (Relaxed, Normal, Fast).
+- **Lower background CPU**: the cursor thread reads the window position once a second instead of on every wake, the click-through check runs at most about 30 times a second, and the memory trim now runs once after startup instead of every 30 seconds.
+- **Ambient motion is off unless you turn it on**: the blurred gradients no longer redraw every frame while music plays.
+- **New setup window**: `DOKIII-Installer.exe` has a dark glass card over a pixel night scene, an install folder picker and a desktop shortcut switch. It runs the regular installer silently, so updates and uninstalling work as before.
 
 ---
 
@@ -151,7 +161,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.1.7`) builds it and publishes `DOKIII-Setup.exe` through GitHub Actions. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.0`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

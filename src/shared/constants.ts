@@ -1,3 +1,4 @@
+import { DEFAULT_PERFORMANCE } from './performance';
 import { PRESET_IMAGES, glyphDataUrl } from './presetAssets';
 
 export const WIDGET_IDS = {
@@ -237,6 +238,7 @@ export const DEFAULT_DESKTOP_WIDGETS: DesktopWidgetItem[] = [
 ];
 
 export const DEFAULT_DOCK_CONFIG = {
+  performance: { ...DEFAULT_PERFORMANCE },
   position: 'bottom' as 'bottom' | 'left' | 'right',
   size: 64,
   magnification: true,

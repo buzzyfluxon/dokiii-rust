@@ -45,11 +45,30 @@ pub fn start(app: AppHandle) {
         .spawn(move || run(app));
 }
 
+struct Geometry {
+    visible: bool,
+    position: tauri::PhysicalPosition<i32>,
+    size: tauri::PhysicalSize<u32>,
+    scale: f64,
+    read_at: Instant,
+}
+
+fn read_geometry(window: &tauri::WebviewWindow) -> Option<Geometry> {
+    Some(Geometry {
+        visible: window.is_visible().unwrap_or(false),
+        position: window.outer_position().ok()?,
+        size: window.inner_size().ok()?,
+        scale: window.scale_factor().ok()?,
+        read_at: Instant::now(),
+    })
+}
+
 fn run(app: AppHandle) {
     let mut last = (i32::MIN, i32::MIN);
     let mut last_down = false;
     let mut last_move = Instant::now();
     let mut capturing: Option<bool> = None;
+    let mut geometry: Option<Geometry> = None;
 
     loop {
         let idle = last_move.elapsed() > Duration::from_millis(1500);
@@ -59,20 +78,20 @@ fn run(app: AppHandle) {
             Some(window) => window,
             None => continue,
         };
-        if !window.is_visible().unwrap_or(false) {
-            continue;
+        let stale = geometry
+            .as_ref()
+            .map(|g| g.read_at.elapsed() > Duration::from_millis(1000))
+            .unwrap_or(true);
+        if stale {
+            geometry = read_geometry(&window);
         }
+        let (position, size, scale) = match geometry.as_ref() {
+            Some(g) if g.visible => (g.position, g.size, g.scale),
+            _ => continue,
+        };
         let (cx, cy) = match cursor_position() {
             Some(point) => point,
             None => continue,
-        };
-        let (position, size, scale) = match (
-            window.outer_position(),
-            window.inner_size(),
-            window.scale_factor(),
-        ) {
-            (Ok(position), Ok(size), Ok(scale)) => (position, size, scale),
-            _ => continue,
         };
 
         let inside = cx >= position.x
