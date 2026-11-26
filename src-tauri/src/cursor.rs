@@ -107,6 +107,7 @@ fn run(app: AppHandle) {
             if moved {
                 last = (cx, cy);
                 last_move = Instant::now();
+                crate::system::touch_activity();
             }
             if inside {
                 let payload = CursorPayload {

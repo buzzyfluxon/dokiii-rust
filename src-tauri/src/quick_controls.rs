@@ -1,3 +1,7 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+
 use serde::Serialize;
 
 #[cfg(windows)]
@@ -5,11 +9,40 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 use std::process::Command;
 
+/// When a brightness read failed, the display has no software brightness control (most desktop
+/// monitors). Spawning PowerShell again every few seconds just to fail again burns CPU and RAM, so
+/// the failure is remembered and the next try waits.
+static BRIGHTNESS_FAILED_AT: Mutex<Option<Instant>> = Mutex::new(None);
+const BRIGHTNESS_RETRY: Duration = Duration::from_secs(600);
+
+/// Windows only needs to be asked for radio access once per run.
+static RADIO_ACCESS_ASKED: AtomicBool = AtomicBool::new(false);
+
+fn brightness_known_unsupported() -> bool {
+    let guard = match BRIGHTNESS_FAILED_AT.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    match *guard {
+        Some(at) => at.elapsed() < BRIGHTNESS_RETRY,
+        None => false,
+    }
+}
+
+fn remember_brightness(ok: bool) {
+    let mut guard = match BRIGHTNESS_FAILED_AT.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    *guard = if ok { None } else { Some(Instant::now()) };
+}
+
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// Snapshot of the quick toggles.
-/// `brightness` is -1 when the display has no software brightness control (most desktop monitors).
+/// `brightness` is -1 when the display has no software brightness control (most desktop monitors),
+/// and -2 when it was not read this time.
 /// `wifi` / `bluetooth` are `None` when the PC has no such radio.
 #[derive(Serialize, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
@@ -32,7 +65,15 @@ impl Default for QuickState {
 #[cfg(windows)]
 fn powershell(script: &str) -> Option<String> {
     let output = Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script])
+        .args([
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-WindowStyle",
+            "Hidden",
+            "-Command",
+            script,
+        ])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
         .ok()?;
@@ -44,12 +85,16 @@ fn powershell(script: &str) -> Option<String> {
 
 #[cfg(windows)]
 fn read_brightness() -> i32 {
-    powershell(
+    if brightness_known_unsupported() {
+        return -1;
+    }
+    let value = powershell(
         "(Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightness -ErrorAction Stop | Select-Object -First 1).CurrentBrightness",
     )
     .and_then(|text| text.lines().next().and_then(|line| line.trim().parse::<i32>().ok()))
-    .map(|value| value.clamp(0, 100))
-    .unwrap_or(-1)
+    .map(|value| value.clamp(0, 100));
+    remember_brightness(value.is_some());
+    value.unwrap_or(-1)
 }
 
 #[cfg(not(windows))]
@@ -78,8 +123,10 @@ fn find_radio(kind: windows::Devices::Radios::RadioKind) -> Option<windows::Devi
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
     }
-    if let Ok(request) = Radio::RequestAccessAsync() {
-        let _ = request.get();
+    if !RADIO_ACCESS_ASKED.swap(true, Ordering::Relaxed) {
+        if let Ok(request) = Radio::RequestAccessAsync() {
+            let _ = request.get();
+        }
     }
     let radios = Radio::GetRadiosAsync().ok()?.get().ok()?;
     for radio in radios {
@@ -108,24 +155,28 @@ fn write_radio(kind: windows::Devices::Radios::RadioKind, on: bool) {
     }
 }
 
+/// Brightness needs a PowerShell process, so it is only read when `with_brightness` is set.
+/// The radios are read in-process through the Windows API, which is cheap.
 #[cfg(windows)]
-fn read_state() -> QuickState {
+fn read_state(with_brightness: bool) -> QuickState {
     use windows::Devices::Radios::RadioKind;
     QuickState {
-        brightness: read_brightness(),
+        brightness: if with_brightness { read_brightness() } else { -2 },
         wifi: read_radio(RadioKind::WiFi),
         bluetooth: read_radio(RadioKind::Bluetooth),
     }
 }
 
 #[cfg(not(windows))]
-fn read_state() -> QuickState {
+fn read_state(_with_brightness: bool) -> QuickState {
     QuickState::default()
 }
 
+/// `brightness` is -2 when the caller did not ask for it, so the page keeps the value it has.
 #[tauri::command]
-pub async fn get_quick_controls() -> QuickState {
-    tauri::async_runtime::spawn_blocking(read_state)
+pub async fn get_quick_controls(with_brightness: Option<bool>) -> QuickState {
+    let with_brightness = with_brightness.unwrap_or(true);
+    tauri::async_runtime::spawn_blocking(move || read_state(with_brightness))
         .await
         .unwrap_or_default()
 }

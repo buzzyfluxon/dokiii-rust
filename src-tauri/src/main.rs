@@ -45,6 +45,8 @@ fn main() {
             commands::config_get,
             commands::config_save,
             commands::get_displays,
+            commands::get_desktop_size,
+            commands::trim_memory,
             commands::report_hit,
             commands::set_modal_open,
             commands::set_popover_open,

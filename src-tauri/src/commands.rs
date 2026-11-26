@@ -50,6 +50,31 @@ pub fn config_save(
     result
 }
 
+#[derive(Serialize)]
+pub struct DesktopSize {
+    width: f64,
+    height: f64,
+}
+
+/// Size of the transparent desktop layer in CSS pixels. The Control Center window has its own,
+/// much smaller size, so it asks for this when it needs to place a widget on the real desktop.
+#[tauri::command]
+pub fn get_desktop_size(app: AppHandle) -> Option<DesktopSize> {
+    let window = app.get_webview_window("main")?;
+    let size = window.inner_size().ok()?;
+    let scale = window.scale_factor().unwrap_or(1.0).max(0.1);
+    Some(DesktopSize {
+        width: (size.width as f64 / scale).round(),
+        height: (size.height as f64 / scale).round(),
+    })
+}
+
+/// Hands unused memory of the app and its WebView processes back to Windows.
+#[tauri::command]
+pub fn trim_memory() {
+    crate::system::trim_soon(600);
+}
+
 #[tauri::command]
 pub fn get_displays(app: AppHandle) -> Vec<DisplayInfo> {
     let primary = app.primary_monitor().ok().flatten();

@@ -1,4 +1,6 @@
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
@@ -33,6 +35,25 @@ pub struct StorageInfo {
     total: u64,
     used: u64,
     free: u64,
+}
+
+static LAST_ACTIVITY_SECS: AtomicU64 = AtomicU64::new(0);
+
+fn now_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// Called whenever the cursor moves, so the memory trimmer can wait until you are idle.
+pub fn touch_activity() {
+    LAST_ACTIVITY_SECS.store(now_secs(), Ordering::Relaxed);
+}
+
+#[cfg(windows)]
+fn idle_for_secs() -> u64 {
+    now_secs().saturating_sub(LAST_ACTIVITY_SECS.load(Ordering::Relaxed))
 }
 
 static PREV_CPU: Mutex<Option<(u64, u64, u64)>> = Mutex::new(None);
@@ -249,7 +270,17 @@ fn trim_working_sets() {
 pub fn start_trimmer() {
     std::thread::spawn(|| {
         std::thread::sleep(std::time::Duration::from_secs(15));
-        trim_working_sets();
+        let mut last_trim = 0u64;
+        loop {
+            // Only trim when the cursor has been still for a while, so waking the dock up never
+            // has to page its memory back in under your hand.
+            let now = now_secs();
+            if idle_for_secs() >= 30 && now.saturating_sub(last_trim) >= 180 {
+                trim_working_sets();
+                last_trim = now;
+            }
+            std::thread::sleep(std::time::Duration::from_secs(20));
+        }
     });
 }
 
