@@ -12,7 +12,7 @@ export interface ElectronAPI {
   getAudioVolume(): Promise<{ volume: number; isMuted: boolean }>;
   setAudioVolume(volume: number): Promise<{ volume: number; isMuted: boolean }>;
   toggleAudioMute(): Promise<boolean>;
-  getQuickControls(): Promise<{ brightness: number; wifi: boolean | null; bluetooth: boolean | null }>;
+  getQuickControls(withBrightness?: boolean): Promise<{ brightness: number; wifi: boolean | null; bluetooth: boolean | null }>;
   setBrightness(value: number): Promise<number>;
   setRadio(kind: 'wifi' | 'bluetooth', on: boolean): Promise<boolean | null>;
   selectAppFile(): Promise<{ name: string; path: string; icon?: string } | null>;
@@ -53,6 +53,8 @@ export interface ElectronAPI {
     }>
   ): Promise<void>;
   setAutoHide(value: boolean): Promise<void>;
+  getDesktopSize(): Promise<{ width: number; height: number } | null>;
+  trimMemory(): Promise<void>;
   getDisplays(): Promise<{ index: number; id: number; isPrimary: boolean; width: number; height: number }[]>;
   showWidgetLibrary(): Promise<void>;
   showSettings(): Promise<void>;

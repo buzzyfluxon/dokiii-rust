@@ -164,7 +164,7 @@ export const Halo: React.FC = () => {
     };
 
     poll();
-    const interval = setInterval(poll, 1500 * refreshMult);
+    const interval = setInterval(poll, 2500 * refreshMult);
 
     return () => {
       mounted = false;

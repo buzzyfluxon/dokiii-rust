@@ -73,6 +73,31 @@ interface ConfigState {
 
 let noticeTimer: ReturnType<typeof setTimeout> | null = null;
 
+// The desktop layer lives in the main window. The Control Center is a separate, smaller window, so
+// widgets must be placed against the main window's size and never against the Control Center's own.
+let cachedDesktop: { width: number; height: number } | null = null;
+
+const desktopSize = (): { width: number; height: number } => {
+  if (!isControlCenterWindow()) {
+    return { width: window.innerWidth || 1920, height: window.innerHeight || 1080 };
+  }
+  if (cachedDesktop) return cachedDesktop;
+  const s = window.screen;
+  return { width: s?.availWidth || 1920, height: s?.availHeight || 1040 };
+};
+
+const loadDesktopSize = () => {
+  if (!isControlCenterWindow()) return;
+  try {
+    window.electronAPI
+      .getDesktopSize()
+      .then((size) => {
+        if (size && size.width > 0 && size.height > 0) cachedDesktop = size;
+      })
+      .catch(() => {});
+  } catch (_) {}
+};
+
 export const useConfigStore = create<ConfigState>((set, get) => ({
   dock: { ...DEFAULT_DOCK_CONFIG },
   profiles: [...DEFAULT_PROFILES],
@@ -200,8 +225,8 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   addDesktopWidget: (type, size = 'small') => {
     const { dock } = get();
     const current = dock.desktopWidgets || [];
-    const winW = window.innerWidth || 1920;
-    const winH = window.innerHeight || 1080;
+    const { width: winW } = desktopSize();
+    const { height: winH } = desktopSize();
     const reserved = dock.autoHide
       ? null
       : getDockReservedRect(dock.position || 'bottom', dock.size || 64, winW, winH);
@@ -226,14 +251,17 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     const current = get().dock.desktopWidgets || [];
     const updated = current.filter((w) => w.id !== id);
     get().updateConfig({ desktopWidgets: updated });
+    try {
+      window.electronAPI?.trimMemory?.();
+    } catch (_) {}
   },
   resetDesktopWidgetPosition: (id) => {
     const { dock } = get();
     const current = dock.desktopWidgets || [];
     const target = current.find((w) => w.id === id);
     if (!target) return false;
-    const winW = window.innerWidth || 1920;
-    const winH = window.innerHeight || 1080;
+    const { width: winW } = desktopSize();
+    const { height: winH } = desktopSize();
     const reserved = dock.autoHide
       ? null
       : getDockReservedRect(dock.position || 'bottom', dock.size || 64, winW, winH);
@@ -256,8 +284,8 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   },
   setDesktopWidgetSize: (id, size) => {
     const current = get().dock.desktopWidgets || [];
-    const winW = window.innerWidth || 1920;
-    const winH = window.innerHeight || 1080;
+    const { width: winW } = desktopSize();
+    const { height: winH } = desktopSize();
     const spot = fitWidgetResize(current, id, size, winW, winH);
     if (!spot) {
       get().showNotice("No space for this size. Move or remove a widget first.");
@@ -375,6 +403,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     }
   },
   init: async () => {
+    loadDesktopSize();
     try {
       window.electronAPI
         .getLaunchOnStartup()

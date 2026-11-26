@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useRefreshMultiplier } from '../../hooks/usePerformance';
 import { FitBox } from './FitBox';
 
 interface QuickControlsWidgetProps {
@@ -85,7 +84,8 @@ const GlassButton: React.FC<{
 );
 
 export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width, height }) => {
-  const [brightness, setBrightnessState] = useState<number>(-1);
+  // -2 = not read yet, -1 = this display has no brightness control
+  const [brightness, setBrightnessState] = useState<number>(-2);
   const [wifi, setWifi] = useState<boolean | null>(null);
   const [bluetooth, setBluetooth] = useState<boolean | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -95,23 +95,32 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width,
   const inFlight = useRef(false);
   const queued = useRef<number | null>(null);
   const busyRadios = useRef<Set<RadioKind>>(new Set());
-  const refreshMult = useRefreshMultiplier();
 
-  const refresh = useCallback(async () => {
+  // Nothing runs in the background. Wi-Fi and Bluetooth are read once when the widget appears
+  // (a cheap Windows call), and everything, brightness included, is read again when the pointer
+  // reaches the widget. So it is always current when you use it and costs nothing when you don't.
+  const lastRead = useRef(0);
+  const refresh = useCallback(async (withBrightness: boolean) => {
+    lastRead.current = Date.now();
     try {
-      const state = await window.electronAPI?.getQuickControls?.();
+      const state = await window.electronAPI?.getQuickControls?.(withBrightness);
       if (!state) return;
-      if (!draggingRef.current && !inFlight.current) setBrightnessState(state.brightness);
+      if (withBrightness && state.brightness !== -2 && !draggingRef.current && !inFlight.current) {
+        setBrightnessState(state.brightness);
+      }
       if (!busyRadios.current.has('wifi')) setWifi(state.wifi);
       if (!busyRadios.current.has('bluetooth')) setBluetooth(state.bluetooth);
     } catch (_) {}
   }, []);
 
   useEffect(() => {
-    refresh();
-    const timer = setInterval(refresh, 5000 * refreshMult);
-    return () => clearInterval(timer);
-  }, [refresh, refreshMult]);
+    void refresh(false);
+  }, [refresh]);
+
+  const handleEnter = useCallback(() => {
+    if (draggingRef.current || Date.now() - lastRead.current < 2000) return;
+    void refresh(true);
+  }, [refresh]);
 
   const sendBrightness = useCallback(async (value: number) => {
     if (inFlight.current) {
@@ -130,8 +139,8 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width,
     }
   }, []);
 
-  const supported = brightness >= 0;
-  const shown = supported ? brightness : 100;
+  const supported = brightness !== -1;
+  const shown = brightness >= 0 ? brightness : 100;
 
   const valueFromPointer = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = pillRef.current?.getBoundingClientRect();
@@ -143,6 +152,10 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width,
   const handleDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
     if (!supported) return;
+    if (brightness === -2) {
+      void refresh(true);
+      return;
+    }
     draggingRef.current = true;
     setDragging(true);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -188,6 +201,7 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width,
   return (
     <FitBox width={width} height={height} designWidth={190} designHeight={190}>
       <div
+        onPointerEnter={handleEnter}
         style={{
           width: '190px',
           height: '190px',

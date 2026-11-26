@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import type { DockAppItem } from '../../shared/constants';
 import photosIcon from '../assets/photos-icon.jpg';
+import finderIcon from '../assets/icons/finder.png';
+import mailIcon from '../assets/icons/mail.png';
+import musicIcon from '../assets/icons/music.png';
+import settingsIcon from '../assets/icons/settings.png';
 
 import { useClockAngles, useTimeStore } from '../store/timeStore';
 import { useCachedImage } from '../hooks/useCachedImage';
+
+// Glass artwork for the system apps. These are small 192px PNGs, so they stay light in memory.
+const ICON_ART: Record<string, string | undefined> = {
+  finder: finderIcon,
+  mail: mailIcon,
+  music: musicIcon,
+  settings: settingsIcon,
+};
 
 interface MacIconProps {
   app: DockAppItem;
@@ -203,49 +215,6 @@ export const MacIcon: React.FC<MacIconProps> = ({ app, size = 48, live = true })
     );
   }
 
-  if (app.iconType === 'finder') {
-    return (
-      <div
-        style={{
-          ...containerStyle,
-          background: 'linear-gradient(135deg, #4fc3f7 0%, #0288d1 50%, #01579b 100%)',
-        }}
-      >
-        <svg width={size * 0.76} height={size * 0.76} viewBox="0 0 100 100">
-          <path
-            d="M50 8 C26.8 8 8 26.8 8 50 C8 73.2 26.8 92 50 92 C73.2 92 92 73.2 92 50 C92 26.8 73.2 8 50 8 Z"
-            fill="none"
-          />
-          <path
-            d="M50 14 C30.1 14 14 30.1 14 50 C14 69.9 30.1 86 50 86 Z"
-            fill="#81d4fa"
-          />
-          <path
-            d="M50 14 C69.9 14 86 30.1 86 50 C86 69.9 69.9 86 50 86 Z"
-            fill="#0288d1"
-          />
-          <path
-            d="M50 14 L50 64 L40 64 C35 64 35 68 40 68 L50 68 L50 86"
-            stroke="#0a2540"
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-          <circle cx="34" cy="42" r="5" fill="#0a2540" />
-          <circle cx="66" cy="42" r="5" fill="#0a2540" />
-          <path
-            d="M26 66 Q50 82 74 66"
-            stroke="#0a2540"
-            strokeWidth="5"
-            strokeLinecap="round"
-            fill="none"
-          />
-        </svg>
-      </div>
-    );
-  }
-
   if (app.iconType === 'safari') {
     return (
       <div
@@ -317,45 +286,18 @@ export const MacIcon: React.FC<MacIconProps> = ({ app, size = 48, live = true })
     );
   }
 
-  if (app.iconType === 'mail') {
+  const artwork = ICON_ART[app.iconType];
+  if (artwork) {
     return (
-      <div
-        style={{
-          ...containerStyle,
-          background: 'linear-gradient(135deg, #007aff 0%, #0051ba 100%)',
-        }}
-      >
-        <svg width={size * 0.68} height={size * 0.68} viewBox="0 0 100 100">
-          <rect x="10" y="24" width="80" height="54" rx="8" fill="#ffffff" />
-          <path
-            d="M12 28 L50 56 L88 28"
-            stroke="#007aff"
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-          <line x1="12" y1="74" x2="40" y2="50" stroke="#c7c7cc" strokeWidth="3" />
-          <line x1="88" y1="74" x2="60" y2="50" stroke="#c7c7cc" strokeWidth="3" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (app.iconType === 'music') {
-    return (
-      <div
-        style={{
-          ...containerStyle,
-          background: 'linear-gradient(135deg, #fc3c44 0%, #f92c8b 50%, #b827fc 100%)',
-        }}
-      >
-        <svg width={size * 0.65} height={size * 0.65} viewBox="0 0 100 100">
-          <path
-            d="M36 72 C36 78 30 84 22 84 C14 84 8 78 8 72 C8 66 14 60 22 60 C26 60 30 62 33 65 L33 26 C33 22 36 19 40 18 L76 10 C80 9 84 12 84 16 L84 56 C84 62 78 68 70 68 C62 68 56 62 56 56 C56 50 62 44 70 44 C74 44 78 46 81 49 L81 22 L36 32 Z"
-            fill="#ffffff"
-          />
-        </svg>
+      <div style={{ ...containerStyle, background: 'transparent', boxShadow: 'none', overflow: 'visible' }}>
+        <img
+          src={artwork}
+          alt={app.name}
+          width={size}
+          height={size}
+          style={{ width: `${size}px`, height: `${size}px`, display: 'block' }}
+          draggable={false}
+        />
       </div>
     );
   }
@@ -381,34 +323,6 @@ export const MacIcon: React.FC<MacIconProps> = ({ app, size = 48, live = true })
           }}
           draggable={false}
         />
-      </div>
-    );
-  }
-
-  if (app.iconType === 'settings') {
-    return (
-      <div
-        style={{
-          ...containerStyle,
-          background: 'linear-gradient(135deg, #8e8e93 0%, #48484a 50%, #2c2c2e 100%)',
-        }}
-      >
-        <svg width={size * 0.72} height={size * 0.72} viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="16" fill="#636366" stroke="#aeaeb2" strokeWidth="4" />
-          {[0, 45, 90, 135, 180, 225, 270, 315].map((d) => (
-            <rect
-              key={d}
-              x="44"
-              y="12"
-              width="12"
-              height="16"
-              rx="4"
-              fill="#aeaeb2"
-              transform={`rotate(${d} 50 50)`}
-            />
-          ))}
-          <circle cx="50" cy="50" r="32" fill="none" stroke="#aeaeb2" strokeWidth="6" />
-        </svg>
       </div>
     );
   }

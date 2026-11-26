@@ -12,11 +12,27 @@ const SLOPE_SCALE = 0.8;
 // How strongly crater relief shows up in the shading near the terminator
 const RELIEF = 1.6;
 
+const smooth = (a: number, b: number, x: number) => {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+// ---------------------------------------------------------------------------------------------
+// Shared texture cache
+//
+// The 512px moon map is decoded once and resampled once per on-screen size. Everything is reference
+// counted: when the last Moon widget is removed from the desktop the decoded image and all pixel
+// buffers are dropped, so a deleted widget no longer keeps memory around.
+// ---------------------------------------------------------------------------------------------
 let mapPromise: Promise<HTMLImageElement> | null = null;
+const resampled = new Map<number, Uint8ClampedArray>();
+let users = 0;
+
 const loadMap = (): Promise<HTMLImageElement> => {
   if (!mapPromise) {
     mapPromise = new Promise((resolve, reject) => {
       const img = new Image();
+      img.decoding = 'async';
       img.onload = () => resolve(img);
       img.onerror = () => {
         mapPromise = null;
@@ -28,25 +44,45 @@ const loadMap = (): Promise<HTMLImageElement> => {
   return mapPromise;
 };
 
-const smooth = (a: number, b: number, x: number) => {
-  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
-  return t * t * (3 - 2 * t);
-};
-
-/** Lights the moon map with the real Sun direction for this phase and paints it onto the canvas. */
-const paintMoon = (canvas: HTMLCanvasElement, img: HTMLImageElement, moon: MoonState, px: number) => {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
+const getTexture = async (px: number): Promise<Uint8ClampedArray | null> => {
+  const cached = resampled.get(px);
+  if (cached) return cached;
+  const img = await loadMap();
+  const again = resampled.get(px);
+  if (again) return again;
   const work = document.createElement('canvas');
   work.width = px;
   work.height = px;
   const wctx = work.getContext('2d', { willReadFrequently: true });
-  if (!wctx) return;
+  if (!wctx) return null;
   wctx.imageSmoothingEnabled = true;
   wctx.imageSmoothingQuality = 'high';
   wctx.drawImage(img, 0, 0, px, px);
-  const tex = wctx.getImageData(0, 0, px, px).data;
+  const data = wctx.getImageData(0, 0, px, px).data;
+  work.width = 0;
+  work.height = 0;
+  resampled.set(px, data);
+  return data;
+};
+
+const retainTexture = () => {
+  users += 1;
+};
+
+const releaseTexture = () => {
+  users = Math.max(0, users - 1);
+  if (users > 0) return;
+  resampled.clear();
+  mapPromise = null;
+  try {
+    window.electronAPI?.trimMemory?.();
+  } catch (_) {}
+};
+
+/** Lights the moon map with the real Sun direction for this phase and paints it onto the canvas. */
+const paintMoon = (canvas: HTMLCanvasElement, tex: Uint8ClampedArray, moon: MoonState, px: number) => {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
   const out = ctx.createImageData(px, px);
   const dst = out.data;
@@ -103,13 +139,19 @@ const paintMoon = (canvas: HTMLCanvasElement, img: HTMLImageElement, moon: MoonS
 const MoonCanvas: React.FC<{ radius: number; moon: MoonState }> = ({ radius, moon }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const diameter = radius * 2;
-  const px = Math.round(diameter * Math.min(2, Math.max(1, window.devicePixelRatio || 1)) * 1.5);
+  // One texel per device pixel is enough. The old 1.5x oversampling only made the buffers bigger.
+  const px = Math.round(diameter * Math.min(2, Math.max(1, window.devicePixelRatio || 1)));
+
+  useEffect(() => {
+    retainTexture();
+    return releaseTexture;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    loadMap()
-      .then((img) => {
-        if (!cancelled && canvasRef.current) paintMoon(canvasRef.current, img, moon, px);
+    getTexture(px)
+      .then((tex) => {
+        if (!cancelled && tex && canvasRef.current) paintMoon(canvasRef.current, tex, moon, px);
       })
       .catch(() => {});
     return () => {
@@ -126,7 +168,8 @@ const MoonCanvas: React.FC<{ radius: number; moon: MoonState }> = ({ radius, moo
         width: diameter,
         height: diameter,
         display: 'block',
-        filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.55))',
+        borderRadius: '50%',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
         pointerEvents: 'none',
       }}
     />
@@ -137,9 +180,13 @@ export const MoonPhaseWidget: React.FC<MoonPhaseProps> = ({ size = 'small' }) =>
   const [moon, setMoon] = useState<MoonState>(() => computeMoonState());
 
   useEffect(() => {
-    const update = () => setMoon(computeMoonState());
-    update();
-    const timer = setInterval(update, 60000);
+    // The Moon moves about half a degree an hour, so checking every 5 minutes keeps it live and
+    // the picture is only repainted once the phase has actually moved.
+    const update = () => {
+      const next = computeMoonState();
+      setMoon((prev) => (Math.abs(next.elongation - prev.elongation) >= 0.05 ? next : prev));
+    };
+    const timer = setInterval(update, 5 * 60 * 1000);
     return () => clearInterval(timer);
   }, []);
 
