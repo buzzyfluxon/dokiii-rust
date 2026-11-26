@@ -13,6 +13,10 @@ const CHECK_DELAY: Duration = Duration::from_secs(10);
 const CHECK_INTERVAL: Duration = Duration::from_secs(12 * 60 * 60);
 const MAX_DOWNLOAD_RETRIES: u32 = 2;
 const DOWNLOAD_RETRY_DELAY: Duration = Duration::from_secs(4);
+const OFFLINE_RETRY_DELAY: Duration = Duration::from_secs(60);
+const MAX_OFFLINE_RETRIES: u32 = 8;
+const OFFLINE_MESSAGE: &str = "GitHub can't be reached right now. Check your internet connection and try again.";
+const INSTALLER_ASSET: &str = "DOKIII-Setup.exe";
 
 struct State {
     status: Value,
@@ -96,7 +100,72 @@ fn agent(timeout_secs: u64) -> ureq::Agent {
         .build()
 }
 
+fn is_network_failure(message: &str) -> bool {
+    let lower = message.to_lowercase();
+    [
+        "dns failed",
+        "no such host",
+        "connection failed",
+        "timed out",
+        "network is unreachable",
+        "failed to lookup",
+        "os error",
+    ]
+    .iter()
+    .any(|needle| lower.contains(needle))
+}
+
+fn friendly(message: String) -> String {
+    if is_network_failure(&message) {
+        OFFLINE_MESSAGE.to_string()
+    } else {
+        message
+    }
+}
+
+fn fetch_latest_via_web() -> Result<Option<(String, String, String)>, String> {
+    let url = format!("https://github.com/{}/{}/releases/latest", OWNER, REPO);
+    let client = ureq::AgentBuilder::new()
+        .redirects(0)
+        .timeout(Duration::from_secs(15))
+        .user_agent("DOKIII-updater")
+        .build();
+    let response = client.get(&url).call().map_err(|e| e.to_string())?;
+    let location = response
+        .header("location")
+        .ok_or("GitHub did not point to a release")?
+        .to_string();
+    let tag = location
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or("")
+        .to_string();
+    if tag.is_empty() {
+        return Err("GitHub did not point to a release".to_string());
+    }
+    let version = tag.trim_start_matches('v').to_string();
+    if !is_newer(&version, env!("CARGO_PKG_VERSION")) {
+        return Ok(None);
+    }
+    let download = format!(
+        "https://github.com/{}/{}/releases/download/{}/{}",
+        OWNER, REPO, tag, INSTALLER_ASSET
+    );
+    Ok(Some((version, download, INSTALLER_ASSET.to_string())))
+}
+
 fn fetch_latest() -> Result<Option<(String, String, String)>, String> {
+    match fetch_latest_from_api() {
+        Ok(found) => Ok(found),
+        Err(api_error) => match fetch_latest_via_web() {
+            Ok(found) => Ok(found),
+            Err(_) => Err(friendly(api_error)),
+        },
+    }
+}
+
+fn fetch_latest_from_api() -> Result<Option<(String, String, String)>, String> {
     let url = format!("https://api.github.com/repos/{}/{}/releases/latest", OWNER, REPO);
     let response = agent(15)
         .get(&url)
@@ -136,15 +205,15 @@ fn fetch_latest() -> Result<Option<(String, String, String)>, String> {
     Err("the release has no installer".to_string())
 }
 
-fn run_check(app: AppHandle, manual: bool) {
+fn run_check(app: AppHandle, manual: bool) -> bool {
     if cfg!(debug_assertions) {
         broadcast(&app, json!({ "status": "not-available", "isManual": manual }));
-        return;
+        return false;
     }
     {
         let mut state = lock();
         if state.busy || state.downloading {
-            return;
+            return false;
         }
         state.busy = true;
     }
@@ -161,20 +230,24 @@ fn run_check(app: AppHandle, manual: bool) {
             }
             if !manual && dismissed_version() == version {
                 lock().status = Value::Null;
-                return;
+                return false;
             }
             broadcast(&app, json!({ "status": "available", "version": version, "isManual": manual }));
+            false
         }
         Ok(None) => {
             lock().busy = false;
             broadcast(&app, json!({ "status": "not-available", "isManual": manual }));
+            false
         }
         Err(message) => {
             lock().busy = false;
+            let offline = message == OFFLINE_MESSAGE;
             broadcast(
                 &app,
                 json!({ "status": "error", "message": message, "phase": "check", "isManual": manual }),
             );
+            offline
         }
     }
 }
@@ -243,7 +316,7 @@ fn run_download(app: AppHandle) {
                 lock().downloading = false;
                 broadcast(
                     &app,
-                    json!({ "status": "error", "message": message, "phase": "download", "isManual": false }),
+                    json!({ "status": "error", "message": friendly(message), "phase": "download", "isManual": false }),
                 );
                 return;
             }
@@ -259,9 +332,16 @@ pub fn start(app: AppHandle) {
         .name("dokiii-updater".into())
         .spawn(move || {
             std::thread::sleep(CHECK_DELAY);
+            let mut offline_retries: u32 = 0;
             loop {
-                run_check(app.clone(), false);
-                std::thread::sleep(CHECK_INTERVAL);
+                let offline = run_check(app.clone(), false);
+                if offline && offline_retries < MAX_OFFLINE_RETRIES {
+                    offline_retries += 1;
+                    std::thread::sleep(OFFLINE_RETRY_DELAY);
+                } else {
+                    offline_retries = 0;
+                    std::thread::sleep(CHECK_INTERVAL);
+                }
             }
         });
 }
@@ -271,7 +351,9 @@ pub fn check_for_updates(app: AppHandle, manual: Option<bool>) {
     let manual = manual.unwrap_or(false);
     let _ = std::thread::Builder::new()
         .name("dokiii-update-check".into())
-        .spawn(move || run_check(app, manual));
+        .spawn(move || {
+            run_check(app, manual);
+        });
 }
 
 #[tauri::command]

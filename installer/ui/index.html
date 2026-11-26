@@ -7,12 +7,18 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <canvas id="scene" width="236" height="160"></canvas>
+  <div class="bg">
+    <canvas id="stars"></canvas>
+    <div class="aurora a1"></div>
+    <div class="aurora a2"></div>
+    <div class="aurora a3"></div>
+    <div class="vignette"></div>
+  </div>
 
   <header class="titlebar" data-tauri-drag-region>
     <div class="titlebar-brand" data-tauri-drag-region>
       <img src="logo.png" alt="" draggable="false" />
-      <span data-tauri-drag-region>DOKIII</span>
+      <span data-tauri-drag-region>DOKIII Setup</span>
     </div>
     <div class="titlebar-buttons">
       <button id="btn-min" aria-label="Minimize">
@@ -25,54 +31,74 @@
   </header>
 
   <main class="stage">
-    <section class="card" id="card" data-state="welcome">
-      <h1 id="title">DOKIII</h1>
-      <p class="lead" id="lead">Installs DOKIII for this account. No administrator needed.</p>
+    <section class="hero">
+      <div class="mark"><img src="logo.png" alt="" draggable="false" /></div>
+      <h1>DOKIII</h1>
+      <p class="tagline">A macOS-style dock, floating music player and desktop widgets for Windows.</p>
+      <div class="mini-dock" id="mini-dock"></div>
+    </section>
+
+    <section class="panel" id="panel" data-state="welcome">
+      <div class="panel-head">
+        <span class="eyebrow" id="eyebrow">Setup</span>
+        <h2 id="title">Install DOKIII</h2>
+        <p class="lead" id="lead"></p>
+      </div>
 
       <div class="view view-welcome">
-        <div class="path-row">
-          <div class="path-block">
-            <span class="label">Install to</span>
-            <span class="path" id="path" title=""></span>
-          </div>
-          <button class="btn ghost" id="btn-change">Change…</button>
+        <span class="field-label">Install location</span>
+        <div class="path-box">
+          <span class="path" id="path" title=""></span>
+          <button class="link" id="btn-change">Change</button>
         </div>
 
-        <label class="switch-row">
-          <input type="checkbox" id="shortcut" checked />
-          <span class="switch"><span class="knob"></span></span>
-          <span class="switch-label">Desktop shortcut</span>
-        </label>
-
-        <div class="actions">
-          <span class="version" id="version"></span>
-          <button class="btn primary" id="btn-install">Install</button>
+        <div class="options">
+          <label class="option">
+            <span class="option-text">
+              <span class="option-name">Desktop shortcut</span>
+              <span class="option-desc">Add DOKIII to your desktop</span>
+            </span>
+            <input type="checkbox" id="shortcut" checked />
+            <span class="switch"><span class="knob"></span></span>
+          </label>
+          <label class="option">
+            <span class="option-text">
+              <span class="option-name">Launch when finished</span>
+              <span class="option-desc">Start the dock right after setup</span>
+            </span>
+            <input type="checkbox" id="autolaunch" checked />
+            <span class="switch"><span class="knob"></span></span>
+          </label>
         </div>
+
+        <button class="btn primary wide" id="btn-install">Install</button>
+        <p class="foot"><span id="version"></span><span class="dot"></span><span>No administrator needed</span></p>
       </div>
 
       <div class="view view-progress">
+        <ol class="steps">
+          <li class="step" data-step="0"><span class="step-mark"></span><span>Preparing</span></li>
+          <li class="step" data-step="1"><span class="step-mark"></span><span>Installing</span></li>
+          <li class="step" data-step="2"><span class="step-mark"></span><span>Finishing up</span></li>
+        </ol>
         <div class="progress"><div class="bar"></div></div>
-        <p class="phase" id="phase">Preparing</p>
       </div>
 
       <div class="view view-done">
-        <div class="actions">
-          <span class="version" id="version-done"></span>
-          <div class="action-group">
-            <button class="btn ghost" id="btn-finish">Close</button>
-            <button class="btn primary" id="btn-launch">Launch DOKIII</button>
-          </div>
+        <div class="badge ok">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+        </div>
+        <div class="button-row">
+          <button class="btn ghost" id="btn-finish">Close</button>
+          <button class="btn primary" id="btn-launch">Launch DOKIII</button>
         </div>
       </div>
 
       <div class="view view-error">
         <p class="error-text" id="error-text"></p>
-        <div class="actions">
-          <span class="version" id="version-error"></span>
-          <div class="action-group">
-            <button class="btn ghost" id="btn-error-close">Close</button>
-            <button class="btn primary" id="btn-retry">Try again</button>
-          </div>
+        <div class="button-row">
+          <button class="btn ghost" id="btn-error-close">Close</button>
+          <button class="btn primary" id="btn-retry">Try again</button>
         </div>
       </div>
     </section>

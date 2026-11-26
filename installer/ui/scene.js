@@ -1,8 +1,7 @@
 (function () {
-  var canvas = document.getElementById('scene');
+  var canvas = document.getElementById('stars');
   var ctx = canvas.getContext('2d');
-  var W = canvas.width;
-  var H = canvas.height;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
 
   function rng(seed) {
     var a = seed >>> 0;
@@ -15,156 +14,118 @@
     };
   }
 
-  var rand = rng(20261125);
-
-  var bayer = [
-    [0, 8, 2, 10],
-    [12, 4, 14, 6],
-    [3, 11, 1, 9],
-    [15, 7, 13, 5]
-  ];
-
-  var sky = [
-    '#0c0720', '#110a2a', '#170d33', '#1e1140', '#28164f', '#37195d',
-    '#4b2067', '#642772', '#7f2f7a', '#9c397f', '#b94883', '#d15c87',
-    '#e47a8b', '#f2a094'
-  ];
-
-  var bg = document.createElement('canvas');
-  bg.width = W;
-  bg.height = H;
-  var b = bg.getContext('2d');
-
-  var horizon = 122;
-  for (var y = 0; y < H; y++) {
-    for (var x = 0; x < W; x++) {
-      var t = Math.min(1, y / horizon) * (sky.length - 1);
-      var d = bayer[y & 3][x & 3] / 16 - 0.5;
-      var i = Math.max(0, Math.min(sky.length - 1, Math.floor(t + d * 0.95 + 0.5)));
-      b.fillStyle = sky[i];
-      b.fillRect(x, y, 1, 1);
-    }
-  }
-
-  b.fillStyle = 'rgba(255, 196, 170, 0.55)';
-  b.fillRect(0, 111, 96, 2);
-  b.fillStyle = 'rgba(255, 214, 190, 0.35)';
-  b.fillRect(0, 113, 70, 1);
-
-  function ridge(base, amp, step, seed) {
-    var r = rng(seed);
-    var heights = new Array(W);
-    var current = base - r() * amp;
-    var target = current;
-    for (var x = 0; x < W; x++) {
-      if (x % step === 0) target = base - r() * amp;
-      current += Math.sign(target - current) * Math.min(Math.abs(target - current), 1);
-      heights[x] = Math.round(current);
-    }
-    return heights;
-  }
-
-  function fillRidge(heights, color) {
-    b.fillStyle = color;
-    for (var x = 0; x < W; x++) {
-      b.fillRect(x, heights[x], 1, H - heights[x]);
-    }
-  }
-
-  function pine(x, y, h, color) {
-    b.fillStyle = color;
-    b.fillRect(x, y - 2, 1, 2);
-    for (var row = 0; row < h; row++) {
-      var half = Math.floor((row + 1) / 2);
-      b.fillRect(x - half, y - 2 - h + row + 1, half * 2 + 1, 1);
-    }
-  }
-
-  function roundTree(x, y, r, color) {
-    b.fillStyle = color;
-    b.fillRect(x, y - 3, 1, 3);
-    for (var dy = -r; dy <= r; dy++) {
-      var w = Math.round(Math.sqrt(r * r - dy * dy));
-      b.fillRect(x - w, y - 3 - r + dy, w * 2 + 1, 1);
-    }
-  }
-
-  var far = ridge(120, 9, 7, 11);
-  fillRidge(far, '#4d2b6e');
-
-  var farTrees = rng(5);
-  for (var f = 0; f < 34; f++) {
-    var fx = Math.floor(farTrees() * W);
-    pine(fx, far[fx] + 1, 3 + Math.floor(farTrees() * 2), '#4d2b6e');
-  }
-
-  var mid = ridge(130, 11, 9, 23);
-  fillRidge(mid, '#341a52');
-
-  var midTrees = rng(9);
-  for (var m = 0; m < 24; m++) {
-    var mx = Math.floor(midTrees() * W);
-    if (midTrees() > 0.35) pine(mx, mid[mx] + 1, 5 + Math.floor(midTrees() * 3), '#341a52');
-    else roundTree(mx, mid[mx] + 1, 3, '#341a52');
-  }
-
-  var near = ridge(141, 9, 11, 37);
-  fillRidge(near, '#241239');
-
-  var nearTrees = rng(13);
-  for (var n = 0; n < 16; n++) {
-    var nx = Math.floor(nearTrees() * W);
-    if (nearTrees() > 0.4) pine(nx, near[nx] + 1, 8 + Math.floor(nearTrees() * 5), '#241239');
-    else roundTree(nx, near[nx] + 1, 4, '#241239');
-  }
-
-  var front = ridge(152, 6, 13, 51);
-  fillRidge(front, '#170b27');
-
-  var frontTrees = rng(17);
-  for (var q = 0; q < 8; q++) {
-    var qx = Math.floor(frontTrees() * W);
-    pine(qx, front[qx] + 1, 6 + Math.floor(frontTrees() * 4), '#170b27');
-  }
-
+  var rand = rng(20261126);
   var stars = [];
-  for (var s = 0; s < 96; s++) {
+  for (var i = 0; i < 90; i++) {
     stars.push({
-      x: Math.floor(rand() * W),
-      y: Math.floor(rand() * 92),
-      big: rand() > 0.9,
+      x: rand(),
+      y: rand() * 0.9,
+      r: 0.5 + rand() * 0.9,
       phase: rand() * Math.PI * 2,
-      speed: 0.4 + rand() * 1.2
+      speed: 0.5 + rand() * 1.4
     });
   }
 
-  function starAlpha(star, time) {
-    var base = 0.35 + 0.65 * (1 - star.y / 110);
-    var wave = 0.5 + 0.5 * Math.sin(time * star.speed + star.phase);
-    return Math.max(0.12, base * (0.45 + 0.55 * wave));
+  function resize() {
+    canvas.width = Math.round(window.innerWidth * dpr);
+    canvas.height = Math.round(window.innerHeight * dpr);
   }
 
   function draw(time) {
-    ctx.drawImage(bg, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (var k = 0; k < stars.length; k++) {
-      var star = stars[k];
-      var a = starAlpha(star, time);
-      ctx.fillStyle = 'rgba(236, 228, 255, ' + a.toFixed(2) + ')';
-      ctx.fillRect(star.x, star.y, 1, 1);
-      if (star.big) {
-        ctx.fillStyle = 'rgba(236, 228, 255, ' + (a * 0.55).toFixed(2) + ')';
-        ctx.fillRect(star.x - 1, star.y, 1, 1);
-        ctx.fillRect(star.x + 1, star.y, 1, 1);
-        ctx.fillRect(star.x, star.y - 1, 1, 1);
-        ctx.fillRect(star.x, star.y + 1, 1, 1);
-      }
+      var s = stars[k];
+      var wave = 0.5 + 0.5 * Math.sin(time * s.speed + s.phase);
+      var alpha = 0.12 + 0.6 * wave * (1 - s.y * 0.6);
+      ctx.fillStyle = 'rgba(220, 228, 255, ' + alpha.toFixed(2) + ')';
+      ctx.beginPath();
+      ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r * dpr, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
+  resize();
   var start = performance.now();
   draw(0);
+  window.addEventListener('resize', function () {
+    resize();
+    draw((performance.now() - start) / 1000);
+  });
   setInterval(function () {
     if (document.hidden) return;
     draw((performance.now() - start) / 1000);
   }, 250);
+
+  var dock = document.getElementById('mini-dock');
+  var icons = [
+    { bg: 'linear-gradient(145deg,#5ac8fa,#0a84ff)', svg: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>' },
+    { bg: 'linear-gradient(145deg,#ff7aa8,#ff3b5c)', svg: '<path d="M9 18V6l10-2v12"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="16" r="2.2"/>' },
+    { logo: true },
+    { bg: 'linear-gradient(145deg,#9d8bff,#6446f0)', svg: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>' },
+    { bg: 'linear-gradient(145deg,#ffb347,#ff8a1f)', svg: '<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8 3v4M16 3v4"/>' },
+    { bg: 'linear-gradient(145deg,#4a5bd6,#2a2f7a)', svg: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>' }
+  ];
+
+  var BASE = 44;
+  var GAP = 10;
+  var PEAK = 0.62;
+  var SPREAD = 58;
+  var tiles = icons.map(function (icon) {
+    var el = document.createElement('div');
+    el.className = 'tile';
+    el.style.width = BASE + 'px';
+    el.style.height = BASE + 'px';
+    if (icon.logo) {
+      var img = document.createElement('img');
+      img.src = 'logo.png';
+      img.draggable = false;
+      el.appendChild(img);
+    } else {
+      el.style.background = icon.bg;
+      el.innerHTML = '<svg viewBox="0 0 24 24">' + icon.svg + '</svg>';
+    }
+    dock.appendChild(el);
+    return el;
+  });
+
+  var hoverX = null;
+  dock.addEventListener('mousemove', function (event) {
+    var rect = dock.getBoundingClientRect();
+    hoverX = event.clientX - rect.left;
+  });
+  dock.addEventListener('mouseleave', function () {
+    hoverX = null;
+  });
+
+  function layout(time) {
+    var width = dock.clientWidth;
+    var restTotal = tiles.length * BASE + (tiles.length - 1) * GAP;
+    var restStart = (width - restTotal) / 2;
+    var focus = hoverX;
+    if (focus === null) {
+      var sweep = 0.5 + 0.5 * Math.sin(time * 0.9);
+      focus = restStart + sweep * restTotal;
+    }
+    var scales = [];
+    var total = 0;
+    for (var i = 0; i < tiles.length; i++) {
+      var center = restStart + i * (BASE + GAP) + BASE / 2;
+      var d = (center - focus) / SPREAD;
+      var scale = 1 + PEAK * Math.exp(-d * d);
+      scales.push(scale);
+      total += BASE * scale + (i < tiles.length - 1 ? GAP : 0);
+    }
+    var x = (width - total) / 2;
+    for (var j = 0; j < tiles.length; j++) {
+      var size = BASE * scales[j];
+      tiles[j].style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0) scale(' + scales[j].toFixed(3) + ')';
+      x += size + GAP;
+    }
+  }
+
+  function frame(now) {
+    if (!document.hidden) layout(now / 1000);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
 })();

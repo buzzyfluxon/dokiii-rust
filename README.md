@@ -40,6 +40,15 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
+## What's New in 2.2.1
+
+- **New setup window design**: `DOKIII-Installer.exe` now has its own look, with the DOKIII mark, an animated mini dock, a setup panel with a folder picker, a desktop shortcut switch and a new Launch when finished switch, and a step-by-step progress view.
+- **Update check works when api.github.com is blocked**: if the GitHub API can't be reached, the updater falls back to the public releases page, so updates still show up.
+- **Clearer update errors**: a network or DNS failure now says GitHub can't be reached instead of showing the raw error, and automatic checks retry every minute (up to 8 times) when the connection isn't ready yet, for example right after startup.
+- **Release workflow**: publishing no longer fails when a release for the tag already exists. It uploads the files to it and replaces older copies.
+
+---
+
 ## What's New in 2.2.0
 
 - **Performance page**: Control Center > Performance has five presets (Potato, Low, Medium, High, Ultra). Under them, every setting a preset changes is listed and can be changed on its own, so you can run Potato with Music Ambient on High. Settings that differ from the preset get a dot, and one button resets back to the preset.
@@ -161,7 +170,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.0`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.1`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 
