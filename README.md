@@ -40,77 +40,11 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
-## What's New in 2.2.1
+## What's New in 2.2.2
 
-- **New setup window design**: `DOKIII-Installer.exe` now has its own look, with the DOKIII mark, an animated mini dock, a setup panel with a folder picker, a desktop shortcut switch and a new Launch when finished switch, and a step-by-step progress view.
-- **Update check works when api.github.com is blocked**: if the GitHub API can't be reached, the updater falls back to the public releases page, so updates still show up.
-- **Clearer update errors**: a network or DNS failure now says GitHub can't be reached instead of showing the raw error, and automatic checks retry every minute (up to 8 times) when the connection isn't ready yet, for example right after startup.
-- **Release workflow**: publishing no longer fails when a release for the tag already exists. It uploads the files to it and replaces older copies.
-
----
-
-## What's New in 2.2.0
-
-- **Performance page**: Control Center > Performance has five presets (Potato, Low, Medium, High, Ultra). Under them, every setting a preset changes is listed and can be changed on its own, so you can run Potato with Music Ambient on High. Settings that differ from the preset get a dot, and one button resets back to the preset.
-- **New settings**: glass blur on or off, ambient motion, snow frame rate (30 or 60) and background refresh rate (Relaxed, Normal, Fast).
-- **Lower background CPU**: the cursor thread reads the window position once a second instead of on every wake, the click-through check runs at most about 30 times a second, and the memory trim now runs once after startup instead of every 30 seconds.
-- **Ambient motion is off unless you turn it on**: the blurred gradients no longer redraw every frame while music plays.
-- **New setup window**: `DOKIII-Installer.exe` has a dark glass card over a pixel night scene, an install folder picker and a desktop shortcut switch. It runs the regular installer silently, so updates and uninstalling work as before.
-
----
-
-## What's New in 2.1.7
-
-- **Memory trim**: every 30 seconds, and right after you close the Control Center, DOKIII asks Windows to take back unused memory from the app and its interface processes, so the number in Task Manager stays low. Memory comes back only when something on screen needs it.
-- **DOKIII memory readout removed** from Control Center > Home.
-
----
-
-## What's New in 2.1.6
-
-- **Less memory**: the Control Center window is no longer prepared when you hover the dock logo, and it is closed completely as soon as you close it, so its memory is given back right away.
-- **Cleaner Control Center sidebar**: the colored icons are gone, only the names remain.
-- **Automatic restart after an update**: DOKIII starts again by itself when the update finishes installing.
-
----
-
-## What's New in 2.1.5
-
-- **Build fix**: the global Widget Color setting is now part of the dock config, so the type check passes and the color is saved and restored correctly.
-
----
-
-## What's New in 2.1.4
-
-- **Widget Color**: Control Center > Desktop Widgets > Widget Color. Pick a color with the color pad, hue slider, strength slider, hex code or Apple-style swatches. Use a solid color or a gradient with an angle. Set it for all widgets or for one widget at a time. The color sits on top of the glass, so the blur and shine stay.
-- **DOKIII memory use**: Control Center > Home shows how much RAM DOKIII uses, split into the core app and the interface.
-- **Rounded logo**: the app icon, installer icon, tray icon and dock logo now have rounded corners.
-
-- **Snowballs need a click**: hold the left mouse button while moving through a snow pile to roll a snowball. Just moving the cursor no longer does anything. Pressing on a pile no longer clicks through to the desktop.
-- **Clear Snow**: a button in Control Center > Dock > Snowfall sweeps all the snow away with a soft left-to-right wipe.
-- **Control Center redesign**: macOS System Settings style, with a search field, colored icon tiles, grouped rows, iOS-style switches and a large title.
-
-## What's New in 2.1.3
-
-- **Control Center opens instantly**: it prepares itself when you hover the dock logo and stays ready for a few minutes after you close it. The open and close animations now use only GPU-friendly motion, so they stay smooth.
-
-## What's New in 2.1.2
-
-- **Halo is instant**: volume and mute changes show in the Halo right away, with no delay. Battery changes are picked up within about a second and a half.
-
-## What's New in 2.1.1
-
-- **Fix**: the Control Center now opens reliably from the dock logo and the tray.
-- **Frosted glass**: the Control Center window now blurs what's behind it, like macOS.
-- **Photo widget**: Choose Photo works again, and you can drag and drop an image onto the widget.
-
-## What's New in 2.1.0
-
-- **Snowfall rebuilt**: snow now builds up slowly into soft, rounded piles on the dock, widgets and window tops. Snowballs only appear when you move your cursor through a pile, and they grow as you roll them. Move a window or widget quickly and the snow on it slides and falls off. New option: **Snow in Front of Windows**.
-- **Apple style animations**: the Halo expands and collapses like the Dynamic Island, and the Control Center opens and closes with a spring animation.
-- **Control Center is its own window**: it shows in the taskbar and in Alt+Tab. Changes you make there apply to the dock right away.
-- **Music shows up on its own**: the Halo and dock player now pick up music as soon as it starts, with no need to press play inside DOKIII first.
-- **Cleaner widget library**: Car Card is now **Photo**. Polaroid, Gallery and Mood Board were removed because they duplicated it.
+- **Moon Phase uses the real moon**: the phase, the lit side and the percentage lit are now calculated from the actual position of the Moon, so they match what you see in the sky (within a few hours). The widget also shows the moon's age in days.
+- **Realistic moon surface**: the cartoon circles are gone. The Moon now shows its dark maria and craters in their real places, including Tycho with its bright rays, and the surface is lit by the Sun direction for the current phase, with craters casting shadows along the edge of the light and a faint earthshine on the dark side.
+- **New Quick Controls widget**: a glass tile with a brightness slider and Wi-Fi and Bluetooth buttons. Brightness works on laptop screens, and a button greys out when the PC has no such radio.
 
 ---
 
@@ -118,7 +52,7 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 - **macOS-Style Dock**: an animated bottom or side dock with fluid magnification, app badges and quick folder access, including Downloads and the Recycle Bin.
 - **Halo and Floating Music**: shows the current song, artist and album art from Spotify and Windows media players, with playback controls.
-- **Desktop Widgets**: world time, analog clock, calendar, system health (CPU, RAM, SSD), battery, volume, photo, music, movie and more.
+- **Desktop Widgets**: world time, analog clock, calendar, system health (CPU, RAM, SSD), battery, volume, a glass Quick Controls tile (brightness, Wi-Fi, Bluetooth), a moon that follows the real phase, photo, music, movie and more.
 - **Snowfall**: an optional Christmas effect that settles on the dock, widgets and windows.
 
 ---
@@ -170,7 +104,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.1`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.2`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

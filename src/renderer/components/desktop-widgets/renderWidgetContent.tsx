@@ -22,6 +22,7 @@ import { DigitalClockWidget } from './DigitalClockWidget';
 import { PhotoCardWidget } from './PhotoCardWidget';
 import { MusicCardWidget } from './MusicCardWidget';
 import { AppIconWidget } from './AppIconWidget';
+import { QuickControlsWidget } from './QuickControlsWidget';
 
 export const renderDesktopWidgetContent = (
   item: DesktopWidgetItem,
@@ -46,6 +47,8 @@ export const renderDesktopWidgetContent = (
       return <PhotoCardWidget width={dims.width} height={dims.height} data={item.data} />;
     case 'music-card':
       return <MusicCardWidget width={dims.width} height={dims.height} data={item.data} />;
+    case 'quick-controls':
+      return <QuickControlsWidget width={dims.width} height={dims.height} />;
     case 'app-icon':
       return <AppIconWidget width={dims.width} height={dims.height} label={item.customTitle} data={item.data} />;
     case 'world-clock':

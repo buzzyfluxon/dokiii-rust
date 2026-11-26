@@ -410,6 +410,7 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
             { type: 'world-clock' as const, name: 'World Clock', desc: 'World silhouette map & digital clock' },
             { type: 'date-day' as const, name: 'Date & Day', desc: 'Large date numeral with day label' },
             { type: 'system-controls' as const, name: 'System Controls', desc: 'Pill volume slider & audio toggles' },
+            { type: 'quick-controls' as const, name: 'Quick Controls', desc: 'Glass brightness slider, Wi-Fi & Bluetooth' },
             { type: 'system-monitor' as const, name: 'System Monitor', desc: 'Concentric 3-ring CPU, RAM, SSD' },
             { type: 'battery' as const, name: 'Battery', desc: 'Charge ring & laptop percentage' },
             { type: 'analog-clock' as const, name: 'Analog Clock', desc: 'Classic dark analog clock dial' },

@@ -15,6 +15,7 @@ mod lnk;
 mod media;
 mod netimg;
 mod process;
+mod quick_controls;
 mod shellpaths;
 mod snow;
 mod screenshot;
@@ -61,6 +62,9 @@ fn main() {
             audio::get_audio_volume,
             audio::set_audio_volume,
             audio::toggle_audio_mute,
+            quick_controls::get_quick_controls,
+            quick_controls::set_brightness,
+            quick_controls::set_radio,
             bin::recycle_bin_count,
             bin::recycle_bin_empty,
             startup::get_launch_on_startup,

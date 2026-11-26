@@ -55,6 +55,9 @@ export function installTauriBridge(): boolean {
     getAudioVolume: () => call('get_audio_volume'),
     setAudioVolume: (volume) => call('set_audio_volume', { volume }),
     toggleAudioMute: () => call<boolean>('toggle_audio_mute'),
+    getQuickControls: () => call('get_quick_controls'),
+    setBrightness: (value) => call<number>('set_brightness', { value }),
+    setRadio: (kind, on) => call<boolean | null>('set_radio', { kind, on }),
     selectAppFile: () => call('select_app_file'),
     getAppIcon: (filePath) => call('get_app_icon', { filePath }),
     selectImageFile: async () => {

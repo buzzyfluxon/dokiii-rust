@@ -6,7 +6,7 @@ export const BASE_SIZE: Record<DesktopWidgetSize, { width: number; height: numbe
   large: { ...DESKTOP_WIDGET_SIZES.large, padding: 18 },
 };
 
-export const FILL_TYPES = new Set<string>(['weather', 'big-date', 'digital-clock', 'photo-card', 'music-card', 'app-icon']);
+export const FILL_TYPES = new Set<string>(['weather', 'big-date', 'digital-clock', 'photo-card', 'music-card', 'quick-controls', 'app-icon']);
 export const BARE_TYPES = new Set<string>(['app-icon']);
 
 export const MAX_TRANSPARENCY = 80;

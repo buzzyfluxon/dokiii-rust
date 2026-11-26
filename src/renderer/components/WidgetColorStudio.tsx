@@ -38,6 +38,7 @@ const TYPE_LABELS: Partial<Record<DesktopWidgetType, string>> = {
   'big-date': 'Big Date',
   'digital-clock': 'Digital Clock',
   'music-card': 'Music',
+  'quick-controls': 'Quick Controls',
   'photo-card': 'Photo Card',
   'car-card': 'Photo',
 };

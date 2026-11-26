@@ -39,6 +39,7 @@ export const WIDGET_IDS = {
   DIGITAL_CLOCK: 'digital-clock',
   PHOTO_CARD: 'photo-card',
   MUSIC_CARD: 'music-card',
+  QUICK_CONTROLS: 'quick-controls',
 } as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[keyof typeof WIDGET_IDS];
@@ -65,6 +66,7 @@ export type DesktopWidgetType =
   | 'digital-clock'
   | 'photo-card'
   | 'music-card'
+  | 'quick-controls'
   | 'app-icon';
 
 export const REMOVED_WIDGET_TYPES = ['polaroid', 'gallery', 'mood-board'];
@@ -83,6 +85,7 @@ export const DESKTOP_WIDGET_DEFAULT_DIMS: Partial<Record<DesktopWidgetType, { wi
   'digital-clock': { width: 100, height: 110 },
   'photo-card': { width: 212, height: 110 },
   'music-card': { width: 212, height: 116 },
+  'quick-controls': { width: 190, height: 190 },
   'app-icon': { width: 100, height: 116 },
 };
 
@@ -180,6 +183,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
   { id: WIDGET_IDS.BIG_DATE, name: 'Big Date & Time', category: 'time', icon: 'clock', defaultWidth: 'wide', description: 'Weekday, date and oversized stacked time with battery pill', placement: 'desktop' },
   { id: WIDGET_IDS.DIGITAL_CLOCK, name: 'Digital Clock Tile', category: 'time', icon: 'clock', defaultWidth: 'compact', description: 'Framed digital clock with a city label', placement: 'desktop' },
   { id: WIDGET_IDS.PHOTO_CARD, name: 'Photo Card', category: 'personal', icon: 'camera', defaultWidth: 'normal', description: 'Edge-to-edge photo, optional black and white. Double-click to change', placement: 'desktop', hidden: true },
+  { id: WIDGET_IDS.QUICK_CONTROLS, name: 'Quick Controls', category: 'system', icon: 'settings', defaultWidth: 'compact', description: 'Glass brightness slider with Wi-Fi and Bluetooth toggles', placement: 'desktop' },
   { id: WIDGET_IDS.MUSIC_CARD, name: 'Music Card', category: 'media', icon: 'music', defaultWidth: 'normal', description: 'Now playing with play button and album strip', placement: 'desktop' },
 ];
 

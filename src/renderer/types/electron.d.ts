@@ -12,6 +12,9 @@ export interface ElectronAPI {
   getAudioVolume(): Promise<{ volume: number; isMuted: boolean }>;
   setAudioVolume(volume: number): Promise<{ volume: number; isMuted: boolean }>;
   toggleAudioMute(): Promise<boolean>;
+  getQuickControls(): Promise<{ brightness: number; wifi: boolean | null; bluetooth: boolean | null }>;
+  setBrightness(value: number): Promise<number>;
+  setRadio(kind: 'wifi' | 'bluetooth', on: boolean): Promise<boolean | null>;
   selectAppFile(): Promise<{ name: string; path: string; icon?: string } | null>;
   getAppIcon(filePath: string): Promise<string | null>;
   selectImageFile(): Promise<string | null>;
