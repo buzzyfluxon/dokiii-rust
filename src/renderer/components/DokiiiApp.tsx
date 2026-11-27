@@ -216,32 +216,6 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
             <div className="dokiii-toggle-handle" />
           </div>
         </div>
-
-        <div className="dokiii-row">
-          <div className="dokiii-row-label">
-            <span className="dokiii-row-name">Automatically Hide Dock</span>
-            <span className="dokiii-row-desc">Reveal dock only when cursor touches screen edge</span>
-          </div>
-          <div
-            className={`dokiii-toggle ${dock.autoHide ? 'active' : ''}`}
-            onClick={() => updateConfig({ autoHide: !dock.autoHide })}
-          >
-            <div className="dokiii-toggle-handle" />
-          </div>
-        </div>
-
-        <div className="dokiii-row">
-          <div className="dokiii-row-label">
-            <span className="dokiii-row-name">Show Dock on Hover</span>
-            <span className="dokiii-row-desc">Reveal the dock whenever the cursor is near it</span>
-          </div>
-          <div
-            className={`dokiii-toggle ${dock.showOnHover ? 'active' : ''}`}
-            onClick={() => updateConfig({ showOnHover: !dock.showOnHover })}
-          >
-            <div className="dokiii-toggle-handle" />
-          </div>
-        </div>
       </div>
 
       <div className="dokiii-card">
@@ -525,6 +499,36 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
               value={dock.widgetSpacing}
               onChange={(e) => updateConfig({ widgetSpacing: Number(e.target.value) })}
             />
+          </div>
+        </div>
+      </div>
+
+      <div className="dokiii-card">
+        <span className="dokiii-card-title">Auto Hide</span>
+
+        <div className="dokiii-row">
+          <div className="dokiii-row-label">
+            <span className="dokiii-row-name">Automatically Hide Dock</span>
+            <span className="dokiii-row-desc">Reveal dock only when cursor touches the screen edge it sits on</span>
+          </div>
+          <div
+            className={`dokiii-toggle ${dock.autoHide ? 'active' : ''}`}
+            onClick={() => updateConfig({ autoHide: !dock.autoHide })}
+          >
+            <div className="dokiii-toggle-handle" />
+          </div>
+        </div>
+
+        <div className="dokiii-row">
+          <div className="dokiii-row-label">
+            <span className="dokiii-row-name">Show Dock on Hover</span>
+            <span className="dokiii-row-desc">Reveal the dock whenever the cursor is near it</span>
+          </div>
+          <div
+            className={`dokiii-toggle ${dock.showOnHover ? 'active' : ''}`}
+            onClick={() => updateConfig({ showOnHover: !dock.showOnHover })}
+          >
+            <div className="dokiii-toggle-handle" />
           </div>
         </div>
       </div>

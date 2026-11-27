@@ -40,6 +40,11 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
+## What's New in 2.2.5
+
+- **Dock on the right edge works.** With the dock set to Right it used to sit in the middle of the screen, and auto-hide could not slide it away from the right edge. It now sits flush against the right edge, just like the left.
+- **Auto-hide moved to the Dock tab.** "Automatically Hide Dock" and "Show Dock on Hover" now live in an Auto Hide card on the Dock page, next to position and size, instead of on Home.
+
 ## What's New in 2.2.4
 
 - **Widgets can be added again.** Adding a widget from the Control Center used the Control Center's own small window to find a free spot, so the desktop looked full. It now uses the real desktop size.
@@ -114,7 +119,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.4`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.5`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

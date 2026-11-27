@@ -260,7 +260,9 @@ export const Dock: React.FC = () => {
       return {
         position: 'fixed',
         left: '12px',
+        right: 'auto',
         top: '50%',
+        bottom: 'auto',
         transform: isAutoHideEnabled && !isVisible ? 'translateX(calc(-100% - 24px)) translateY(-50%)' : 'translateX(0) translateY(-50%)',
         flexDirection: 'column',
         height: 'max-content',
@@ -272,8 +274,10 @@ export const Dock: React.FC = () => {
     if (position === 'right') {
       return {
         position: 'fixed',
+        left: 'auto',
         right: '12px',
         top: '50%',
+        bottom: 'auto',
         transform: isAutoHideEnabled && !isVisible ? 'translateX(calc(100% + 24px)) translateY(-50%)' : 'translateX(0) translateY(-50%)',
         flexDirection: 'column',
         height: 'max-content',
