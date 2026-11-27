@@ -277,7 +277,9 @@
   height: 100%;
   background: var(--accent);
   border-radius: 1px;
-  transition: width 0.5s ease;
+  /* The width only changes once a second. Animating it kept the blurred dock repainting
+     for half of every second while music played. */
+  transition: none;
 }
 
 .clock-widget {
@@ -934,7 +936,9 @@
   background: #0a84ff;
   border-radius: 1px;
   transform-origin: bottom;
-  animation: soundWave 0.8s ease-in-out infinite alternate;
+  /* Stepped on purpose: the bars are 2px wide, so about 10 updates a second looks identical to a
+     smooth animation but costs a fraction of the GPU work under the blurred dock. */
+  animation: soundWave 0.8s steps(8, end) infinite alternate;
 }
 
 .playing-bar.bar1 { animation-delay: 0.1s; }

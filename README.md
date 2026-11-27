@@ -40,12 +40,13 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
-## What's New in 2.2.3
+## What's New in 2.2.4
 
 - **Widgets can be added again.** Adding a widget from the Control Center used the Control Center's own small window to find a free spot, so the desktop looked full. It now uses the real desktop size.
 - **Quick Controls does nothing in the background.** Wi-Fi and Bluetooth are read once when the widget appears, and everything (brightness too) is read when your pointer reaches it. No timers, no repeated PowerShell. A display without brightness control is remembered, so it is not asked again.
 - **Moon Phase is lighter and lets go of memory.** The moon texture is decoded once, shared, and released when the last Moon widget is removed. It checks every 5 minutes and repaints only when the phase has moved.
 - **Memory trimming** hands unused memory back to Windows when you are idle and right after a widget is removed.
+- **Music playback is much lighter.** The equalizer bars and the progress bars no longer repaint the blurred dock and Halo on every frame.
 - **Halo checks Downloads and Screenshots less often.**
 - **New glass icons** for Finder, Mail, Music and System Settings.
 
@@ -113,7 +114,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.3`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.2.4`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

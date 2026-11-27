@@ -166,7 +166,7 @@
   background: #0a84ff;
   border-radius: 1px;
   transform-origin: bottom;
-  animation: haloSoundWave 0.8s ease-in-out infinite alternate;
+  animation: haloSoundWave 0.8s steps(8, end) infinite alternate;
 }
 
 .halo-wave-bar.b1 { animation-delay: 0.1s; }
@@ -272,7 +272,7 @@
   height: 100%;
   background: #0a84ff;
   border-radius: 2px;
-  transition: width 0.3s ease;
+  transition: none;
 }
 
 .halo-exp-controls {
