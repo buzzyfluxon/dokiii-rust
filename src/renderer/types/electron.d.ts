@@ -53,6 +53,8 @@ export interface ElectronAPI {
     }>
   ): Promise<void>;
   setAutoHide(value: boolean): Promise<void>;
+  setReplaceTaskbar(enabled: boolean): Promise<void>;
+  onTaskbarState(callback: (state: { enabled: boolean; fullscreen: boolean; desktopVisible: boolean }) => void): () => void;
   getDesktopSize(): Promise<{ width: number; height: number } | null>;
   trimMemory(): Promise<void>;
   getDisplays(): Promise<{ index: number; id: number; isPrimary: boolean; width: number; height: number }[]>;

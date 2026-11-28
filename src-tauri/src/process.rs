@@ -127,6 +127,7 @@ pub fn show_uninstall(app: tauri::AppHandle) {
             for name in ["uninstall.exe", "Uninstall DOKIII.exe"] {
                 let candidate = dir.join(name);
                 if candidate.exists() && std::process::Command::new(&candidate).spawn().is_ok() {
+                    crate::taskbar::restore_on_exit();
                     app.exit(0);
                     return;
                 }

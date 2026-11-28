@@ -164,6 +164,10 @@ fn subtract(spans: Vec<(f64, f64)>, from: f64, to: f64) -> Vec<(f64, f64)> {
     out
 }
 
+pub fn desktop_visible(app: &AppHandle) -> bool {
+    compute(app).visible
+}
+
 fn compute(app: &AppHandle) -> DesktopState {
     let hidden = DesktopState {
         visible: false,
@@ -287,7 +291,7 @@ pub fn set_snow_front(app: AppHandle, front: bool) {
     FRONT.store(front, Ordering::Relaxed);
     let modal = app.state::<crate::state::AppState>().modal.load(Ordering::Relaxed);
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_always_on_top(front || modal);
+        let _ = window.set_always_on_top(front || modal || crate::taskbar::wants_top());
     }
 }
 

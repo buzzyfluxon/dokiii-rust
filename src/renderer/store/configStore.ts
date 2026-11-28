@@ -38,6 +38,9 @@ interface ConfigState {
   activeAppTab: DokiiiAppTab;
   notice: string | null;
   dockHidden: boolean;
+  taskbarFullscreen: boolean;
+  taskbarDesktopVisible: boolean;
+  setTaskbarState: (fullscreen: boolean, desktopVisible: boolean) => void;
   initialized: boolean;
   launchOnStartup: boolean;
   setLaunchOnStartup: (enabled: boolean) => void;
@@ -108,6 +111,10 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   activeAppTab: 'home',
   notice: null,
   dockHidden: false,
+  taskbarFullscreen: false,
+  taskbarDesktopVisible: true,
+  setTaskbarState: (fullscreen, desktopVisible) =>
+    set({ taskbarFullscreen: fullscreen, taskbarDesktopVisible: desktopVisible }),
   initialized: false,
   launchOnStartup: false,
   setLaunchOnStartup: (enabled) => {
@@ -303,7 +310,13 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     get().updateConfig({ desktopWidgets: updated });
   },
   resetDesktopWidgetPositions: () => {
-    get().updateConfig({ desktopWidgets: [...DEFAULT_DESKTOP_WIDGETS] });
+    const current = get().dock.desktopWidgets || [];
+    const reset = current.map((w, i) => ({
+      ...w,
+      x: i % 2 === 0 ? -340 : -180,
+      y: 40 + Math.floor(i / 2) * 160,
+    }));
+    get().updateConfig({ desktopWidgets: reset });
   },
   toggleDesktopWidgetsVisible: () => {
     get().updateConfig({ desktopWidgetsVisible: !get().dock.desktopWidgetsVisible });

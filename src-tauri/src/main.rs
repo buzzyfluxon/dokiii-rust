@@ -22,6 +22,7 @@ mod screenshot;
 mod startup;
 mod state;
 mod system;
+mod taskbar;
 mod tray;
 mod updater;
 mod wallpaper;
@@ -33,6 +34,12 @@ use tauri::{Emitter, Manager, WindowEvent};
 use state::AppState;
 
 fn main() {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        taskbar::restore_on_exit();
+        default_hook(info);
+    }));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
@@ -56,6 +63,7 @@ fn main() {
             commands::show_widget_library,
             commands::show_settings,
             commands::set_auto_hide,
+            taskbar::set_replace_taskbar,
             process::open_target,
             process::run_command,
             system::get_system_metrics,
@@ -114,6 +122,8 @@ fn main() {
             display::fit_window_to_work_area(&handle, &window);
             let _ = window.set_ignore_cursor_events(true);
             tray::create(&handle)?;
+            taskbar::start_from_config(&handle);
+            display::start_work_area_watcher(handle.clone());
             wallpaper::start_watcher(handle.clone());
             updater::start(handle.clone());
             audio::start_watcher(handle.clone());
@@ -139,6 +149,11 @@ fn main() {
             }
             _ => {}
         })
-        .run(tauri::generate_context!())
-        .expect("failed to run DOKIII");
+        .build(tauri::generate_context!())
+        .expect("failed to build DOKIII")
+        .run(|_app, event| {
+            if let tauri::RunEvent::Exit = event {
+                taskbar::restore_on_exit();
+            }
+        });
 }

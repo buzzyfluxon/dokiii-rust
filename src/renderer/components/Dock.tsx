@@ -56,6 +56,7 @@ const WIDGET_COMPONENTS: Record<string, React.FC> = {
 
 export const Dock: React.FC = () => {
   const { enabledWidgets, widgetOrder } = useWidgetStore();
+  const taskbarFullscreen = useConfigStore((s) => s.taskbarFullscreen);
   const {
     dock,
     dockHidden,
@@ -299,7 +300,7 @@ export const Dock: React.FC = () => {
     };
   };
 
-  if (dockHidden) return null;
+  if (dockHidden || (dock.replaceTaskbar && taskbarFullscreen)) return null;
 
   return (
     <>

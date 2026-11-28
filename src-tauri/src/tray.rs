@@ -35,11 +35,12 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
     let library = MenuItem::with_id(app, "widget_library", "Widget Library", true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
     let auto_hide = CheckMenuItem::with_id(app, "auto_hide", "Auto Hide Dock", true, auto_hide_now, None::<&str>)?;
+    let restore_taskbar = MenuItem::with_id(app, "restore_taskbar", "Show Windows Taskbar", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit DOKIII", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
     let menu = Menu::with_items(
         app,
-        &[&open_app, &toggle, &library, &settings, &auto_hide, &separator, &quit],
+        &[&open_app, &toggle, &library, &settings, &auto_hide, &restore_taskbar, &separator, &quit],
     )?;
 
     let icon = Image::from_bytes(include_bytes!("../icons/tray-icon.png"))?;
@@ -68,7 +69,11 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
                 let checked = auto_hide_item.is_checked().unwrap_or(false);
                 let _ = commands::set_auto_hide(app.clone(), app.state::<AppState>(), checked);
             }
-            "quit" => app.exit(0),
+            "quit" => {
+                crate::taskbar::restore_on_exit();
+                app.exit(0);
+            }
+            "restore_taskbar" => crate::taskbar::disable_and_persist(app),
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {

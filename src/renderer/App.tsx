@@ -103,6 +103,10 @@ const App: React.FC = () => {
       }
     });
 
+    const removeTaskbarState = window.electronAPI?.onTaskbarState?.((state) => {
+      useConfigStore.getState().setTaskbarState(state.fullscreen, state.desktopVisible);
+    });
+
     hydrateUpdater();
     const removeUpdaterStatus = window.electronAPI?.onUpdaterStatus?.((status) => {
       setUpdaterStatus(status);
@@ -118,6 +122,7 @@ const App: React.FC = () => {
       removeConfigChanged?.();
       removeConfigSynced?.();
       removeToggleDock?.();
+      removeTaskbarState?.();
       removeUpdaterStatus?.();
     };
   }, [toggleWidgetLibrary, toggleSettings, openDokiiiApp, closeDokiiiApp, updateConfig, toggleDockHidden, closePopover, hydrateUpdater, setUpdaterStatus]);

@@ -108,7 +108,7 @@ pub fn report_hit(state: State<AppState>, hit: bool) {
 pub fn set_modal_open(app: AppHandle, state: State<AppState>, open: bool) {
     state.modal.store(open, Ordering::Relaxed);
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_always_on_top(open || crate::snow::front());
+        let _ = window.set_always_on_top(open || crate::snow::front() || crate::taskbar::wants_top());
         if open {
             let _ = window.show();
             let _ = window.set_focus();
@@ -137,6 +137,7 @@ pub fn hide_window(app: AppHandle) {
 
 #[tauri::command]
 pub fn quit_app(app: AppHandle) {
+    crate::taskbar::restore_on_exit();
     app.exit(0);
 }
 

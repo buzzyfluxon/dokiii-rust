@@ -220,26 +220,21 @@ export interface DockAppItem {
 }
 
 export const DEFAULT_PINNED_APPS: DockAppItem[] = [
-  { id: 'finder', name: 'Finder', path: 'explorer.exe', iconType: 'finder' },
-  { id: 'safari', name: 'Safari', path: 'https://www.google.com', iconType: 'safari' },
+  { id: 'finder', name: 'File Explorer', path: 'explorer.exe', iconType: 'finder' },
+  { id: 'safari', name: 'Browser', path: 'https://www.google.com', iconType: 'safari' },
   { id: 'mail', name: 'Mail', path: 'mailto:', iconType: 'mail' },
   { id: 'terminal', name: 'Terminal', path: 'wt.exe', iconType: 'terminal' },
   { id: 'calendar', name: 'Calendar', path: 'calendar', iconType: 'calendar' },
   { id: 'photos', name: 'Photos', path: 'ms-photos:', iconType: 'photos' },
   { id: 'music', name: 'Music', path: 'spotify', iconType: 'music' },
-  { id: 'settings', name: 'System Settings', path: 'settings', iconType: 'settings' },
+  { id: 'settings', name: 'Settings', path: 'settings', iconType: 'settings' },
 ];
 
-export const DEFAULT_DESKTOP_WIDGETS: DesktopWidgetItem[] = [
-  { id: 'desk-world-clock', type: 'world-clock', x: -340, y: 40, size: 'small', customTitle: 'At Home' },
-  { id: 'desk-date-day', type: 'date-day', x: -180, y: 40, size: 'small', customTitle: 'PADHAIII' },
-  { id: 'desk-sys-controls', type: 'system-controls', x: -340, y: 200, size: 'small' },
-  { id: 'desk-sys-monitor', type: 'system-monitor', x: -180, y: 200, size: 'small' },
-  { id: 'desk-battery', type: 'battery', x: -340, y: 360, size: 'small' },
-  { id: 'desk-analog-clock', type: 'analog-clock', x: -180, y: 360, size: 'small' },
-  { id: 'desk-calendar', type: 'calendar', x: -340, y: 520, size: 'small' },
-  { id: 'desk-moon-phase', type: 'moon-phase', x: -180, y: 520, size: 'small' },
-];
+export const STARTER_PINNED_APPS: DockAppItem[] = DEFAULT_PINNED_APPS.filter((a) =>
+  ['finder', 'safari', 'terminal', 'settings'].includes(a.id)
+);
+
+export const DEFAULT_DESKTOP_WIDGETS: DesktopWidgetItem[] = [];
 
 export const DEFAULT_DOCK_CONFIG = {
   performance: { ...DEFAULT_PERFORMANCE },
@@ -256,9 +251,10 @@ export const DEFAULT_DOCK_CONFIG = {
   animationIntensity: 1.0,
   defaultMonitor: 0,
   showOnHover: false,
+  replaceTaskbar: false,
   liveIcons: true,
   showIndicators: true,
-  pinnedApps: DEFAULT_PINNED_APPS,
+  pinnedApps: STARTER_PINNED_APPS,
   desktopWidgets: DEFAULT_DESKTOP_WIDGETS,
   desktopWidgetsVisible: true,
   activeProfileId: 'default',
@@ -269,14 +265,14 @@ export const DEFAULT_DOCK_CONFIG = {
     intensity: 'medium' as 'low' | 'medium' | 'high',
   },
   snow: {
-    enabled: true,
+    enabled: false,
     intensity: 'medium' as 'low' | 'medium' | 'high',
     snowballs: true,
     onWindows: true,
     inFront: false,
   },
   halo: {
-    enabled: true,
+    enabled: false,
     displayMode: 'always' as 'always' | 'active',
     reducedMotion: false,
     showMusic: true,
@@ -295,7 +291,7 @@ export interface SnowConfig {
 }
 
 export const DEFAULT_SNOW_CONFIG: SnowConfig = {
-  enabled: true,
+  enabled: false,
   intensity: 'medium',
   snowballs: true,
   onWindows: true,
@@ -323,7 +319,7 @@ export interface HaloConfig {
 }
 
 export const DEFAULT_HALO_CONFIG: HaloConfig = {
-  enabled: true,
+  enabled: false,
   displayMode: 'always',
   reducedMotion: false,
   showMusic: true,
@@ -391,7 +387,7 @@ export const DEFAULT_PROFILES: WidgetProfile[] = [
     id: 'default',
     name: 'Default',
     dockWidgets: [...DEFAULT_ENABLED_WIDGETS],
-    pinnedApps: [...DEFAULT_PINNED_APPS],
+    pinnedApps: [...STARTER_PINNED_APPS],
     desktopWidgets: [...DEFAULT_DESKTOP_WIDGETS],
   },
   {
@@ -401,7 +397,7 @@ export const DEFAULT_PROFILES: WidgetProfile[] = [
     pinnedApps: DEFAULT_PINNED_APPS.filter((a) => ['calendar', 'photos', 'music'].includes(a.id)),
     desktopWidgets: [
       { id: 'study-world-clock', type: 'world-clock', x: -340, y: 40, size: 'small', customTitle: 'At Home' },
-      { id: 'study-date-day', type: 'date-day', x: -180, y: 40, size: 'small', customTitle: 'PADHAIII' },
+      { id: 'study-date-day', type: 'date-day', x: -180, y: 40, size: 'small', customTitle: 'Study' },
       { id: 'study-calendar', type: 'calendar', x: -180, y: 200, size: 'small' },
       { id: 'study-moon-phase', type: 'moon-phase', x: -340, y: 200, size: 'small' },
     ],

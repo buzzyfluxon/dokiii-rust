@@ -61,14 +61,10 @@ const GlassButton: React.FC<{
       width: '70px',
       height: '70px',
       borderRadius: '50%',
-      border: `1px solid rgba(255,255,255,${active ? 0.38 : 0.2})`,
-      background: active
-        ? 'radial-gradient(circle at 32% 24%, rgba(255,255,255,0.34), rgba(190,170,255,0.2) 55%, rgba(120,100,210,0.22))'
-        : 'radial-gradient(circle at 32% 24%, rgba(255,255,255,0.16), rgba(255,255,255,0.06) 60%, rgba(20,16,50,0.3))',
-      color: active ? '#ffffff' : 'rgba(255,255,255,0.42)',
-      boxShadow: active
-        ? '0 0 16px rgba(170,140,255,0.45), inset 0 1px 1px rgba(255,255,255,0.5), inset 0 -6px 14px rgba(110,80,220,0.25)'
-        : 'inset 0 1px 1px rgba(255,255,255,0.22), inset 0 -6px 12px rgba(0,0,0,0.25)',
+      border: 'none',
+      background: active ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.14)',
+      color: active ? '#1c1c1e' : 'rgba(255,255,255,0.6)',
+      boxShadow: 'none',
       cursor: available ? 'pointer' : 'not-allowed',
       opacity: available ? 1 : 0.4,
       display: 'flex',
@@ -76,7 +72,7 @@ const GlassButton: React.FC<{
       justifyContent: 'center',
       padding: 0,
       outline: 'none',
-      transition: 'background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, transform 0.12s ease',
+      transition: 'background 0.2s ease, color 0.2s ease, transform 0.12s ease',
     }}
   >
     {children}
@@ -84,7 +80,6 @@ const GlassButton: React.FC<{
 );
 
 export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width, height }) => {
-  // -2 = not read yet, -1 = this display has no brightness control
   const [brightness, setBrightnessState] = useState<number>(-2);
   const [wifi, setWifi] = useState<boolean | null>(null);
   const [bluetooth, setBluetooth] = useState<boolean | null>(null);
@@ -96,9 +91,6 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width,
   const queued = useRef<number | null>(null);
   const busyRadios = useRef<Set<RadioKind>>(new Set());
 
-  // Nothing runs in the background. Wi-Fi and Bluetooth are read once when the widget appears
-  // (a cheap Windows call), and everything, brightness included, is read again when the pointer
-  // reaches the widget. So it is always current when you use it and costs nothing when you don't.
   const lastRead = useRef(0);
   const refresh = useCallback(async (withBrightness: boolean) => {
     lastRead.current = Date.now();
@@ -227,9 +219,8 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width,
             position: 'relative',
             overflow: 'hidden',
             cursor: supported ? 'ns-resize' : 'not-allowed',
-            background: 'linear-gradient(180deg, rgba(18,14,48,0.62), rgba(34,26,78,0.5))',
-            border: '1px solid rgba(255,255,255,0.18)',
-            boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.12)',
+            background: 'rgba(255,255,255,0.16)',
+            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.3)',
             opacity: supported ? 1 : 0.55,
             touchAction: 'none',
           }}
@@ -241,8 +232,7 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width,
               right: 0,
               bottom: 0,
               height: `${shown}%`,
-              background: 'linear-gradient(180deg, #ffffff 0%, #d9ceff 45%, #b3a0f5 100%)',
-              boxShadow: '0 -6px 16px rgba(190,170,255,0.45)',
+              background: 'rgba(255,255,255,0.88)',
               transition: dragging ? 'none' : 'height 0.18s ease',
               pointerEvents: 'none',
             }}
@@ -258,7 +248,7 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({ width,
               pointerEvents: 'none',
             }}
           >
-            <SunIcon color={iconOnFill ? '#5a43b4' : 'rgba(255,255,255,0.7)'} />
+            <SunIcon color={iconOnFill ? '#1c1c1e' : 'rgba(255,255,255,0.7)'} />
           </div>
         </div>
 

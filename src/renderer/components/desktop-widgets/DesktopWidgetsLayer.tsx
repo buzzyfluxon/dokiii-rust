@@ -70,8 +70,9 @@ export const DesktopWidgetsLayer: React.FC = () => {
   const downPoint = useRef<{ x: number; y: number } | null>(null);
   const lastTap = useRef<{ id: string; time: number } | null>(null);
 
+  const taskbarDesktopVisible = useConfigStore((s) => s.taskbarDesktopVisible);
   const widgets = dock.desktopWidgets || [];
-  const isVisible = dock.desktopWidgetsVisible !== false;
+  const isVisible = dock.desktopWidgetsVisible !== false && !(dock.replaceTaskbar && !taskbarDesktopVisible);
   const isLiquidGlass = Boolean(dock.liquidGlassEnabled);
   const desktopSample = useLiquidGlassStore((s) => s.getDesktopWidgetsSample());
 

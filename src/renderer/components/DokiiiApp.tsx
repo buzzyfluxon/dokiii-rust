@@ -534,6 +534,29 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
       </div>
 
       <div className="dokiii-card">
+        <span className="dokiii-card-title">Windows Taskbar</span>
+
+        <div className="dokiii-row">
+          <div className="dokiii-row-label">
+            <span className="dokiii-row-name">Replace Windows Taskbar</span>
+            <span className="dokiii-row-desc">
+              Hides the taskbar and keeps the dock above your windows, except over full-screen apps. Works best with Automatically Hide Dock. Quitting DOKIII brings the taskbar back.
+            </span>
+          </div>
+          <div
+            className={`dokiii-toggle ${dock.replaceTaskbar ? 'active' : ''}`}
+            onClick={() => {
+              const next = !dock.replaceTaskbar;
+              updateConfig({ replaceTaskbar: next });
+              window.electronAPI?.setReplaceTaskbar(next);
+            }}
+          >
+            <div className="dokiii-toggle-handle" />
+          </div>
+        </div>
+      </div>
+
+      <div className="dokiii-card">
         <span className="dokiii-card-title">Magnification Wave</span>
 
         <div className="dokiii-row">
@@ -1060,7 +1083,7 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
             width: '80px',
             height: '80px',
             borderRadius: '20px',
-            background: 'linear-gradient(135deg, #1f1c2c 0%, #928dab 100%)',
+            background: 'linear-gradient(135deg, #2b2b30 0%, #5c5c64 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1177,33 +1200,6 @@ export const DokiiiApp: React.FC<{ onClosed?: () => void }> = ({ onClosed }) => 
         }
       >
         <div className="dokiii-sidebar" onMouseDown={handleDrag}>
-          <div className="dokiii-window-controls">
-            <button className="dokiii-control-dot close" onClick={handleClose} title="Close">
-              <svg width="6" height="6" viewBox="0 0 6 6" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
-                <line x1="1" y1="1" x2="5" y2="5" />
-                <line x1="5" y1="1" x2="1" y2="5" />
-              </svg>
-            </button>
-            <button className="dokiii-control-dot minimize" onClick={handleMinimize} title="Minimize">
-              <svg width="6" height="6" viewBox="0 0 6 6" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
-                <line x1="1" y1="3" x2="5" y2="3" />
-              </svg>
-            </button>
-            <button className="dokiii-control-dot maximize" onClick={handleMaximize} title={isMaximized ? 'Restore' : 'Zoom'}>
-              {isMaximized ? (
-                <svg width="6" height="6" viewBox="0 0 6 6" fill="currentColor">
-                  <polygon points="0,2 2,2 2,0" />
-                  <polygon points="6,4 4,4 4,6" />
-                </svg>
-              ) : (
-                <svg width="6" height="6" viewBox="0 0 6 6" fill="currentColor">
-                  <polygon points="0,2.5 0,0 2.5,0" />
-                  <polygon points="6,3.5 6,6 3.5,6" />
-                </svg>
-              )}
-            </button>
-          </div>
-
           <label className="dokiii-search">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
               <circle cx="11" cy="11" r="7" />

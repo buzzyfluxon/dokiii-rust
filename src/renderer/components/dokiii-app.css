@@ -64,59 +64,6 @@
   gap: 16px;
 }
 
-.dokiii-window-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-left: 6px;
-  padding-bottom: 8px;
-}
-
-.dokiii-control-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.dokiii-control-dot svg {
-  opacity: 0;
-  transition: opacity 0.12s ease;
-  color: rgba(0, 0, 0, 0.75);
-  pointer-events: none;
-}
-
-.dokiii-window-controls:hover .dokiii-control-dot svg,
-.dokiii-control-dot:hover svg {
-  opacity: 1;
-}
-
-.dokiii-control-dot:active {
-  transform: scale(0.92);
-}
-
-.dokiii-control-dot.close {
-  background: #ff5f57;
-  border: 0.5px solid #e0443e;
-}
-
-.dokiii-control-dot.minimize {
-  background: #febc2e;
-  border: 0.5px solid #d89e24;
-}
-
-.dokiii-control-dot.maximize {
-  background: #28c840;
-  border: 0.5px solid #1aab29;
-}
-
 .dokiii-nav-list {
   display: flex;
   flex-direction: column;
@@ -475,10 +422,6 @@
 .cc-root.cc-open .dokiii-app-standalone .dokiii-nav-item {
   animation: ccRise 460ms cubic-bezier(0.32, 0.72, 0, 1) both;
   animation-delay: calc(90ms + var(--i, 0) * 28ms);
-}
-
-.cc-root.cc-open .dokiii-app-standalone .dokiii-window-controls {
-  animation: ccRise 420ms cubic-bezier(0.32, 0.72, 0, 1) 60ms both;
 }
 
 .cc-root.cc-open .dokiii-app-standalone .dokiii-content-header {

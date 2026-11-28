@@ -387,6 +387,7 @@ pub fn install_update(app: AppHandle) {
     };
     if let Some(path) = installer {
         if path.exists() && std::process::Command::new(&path).args(["/P", "/R", "/UPDATE"]).spawn().is_ok() {
+            crate::taskbar::restore_on_exit();
             app.exit(0);
         }
     }

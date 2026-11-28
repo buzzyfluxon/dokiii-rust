@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, WebviewWindow};
 
 use crate::state::AppState;
@@ -30,17 +32,39 @@ fn work_area(_x: i32, _y: i32) -> Option<(i32, i32, u32, u32)> {
     None
 }
 
-pub fn fit_window_to_work_area(app: &AppHandle, window: &WebviewWindow) {
+fn target_area(app: &AppHandle) -> Option<(i32, i32, u32, u32)> {
     let monitors = app.available_monitors().unwrap_or_default();
     let index = app.state::<AppState>().default_monitor();
-    let monitor = match monitors.get(index).or_else(|| monitors.first()) {
-        Some(monitor) => monitor,
-        None => return,
-    };
+    let monitor = monitors.get(index).or_else(|| monitors.first())?;
     let position = monitor.position();
     let size = monitor.size();
-    let (x, y, width, height) = work_area(position.x, position.y)
-        .unwrap_or((position.x, position.y, size.width, size.height));
-    let _ = window.set_position(PhysicalPosition::new(x, y));
-    let _ = window.set_size(PhysicalSize::new(width, height));
+    Some(
+        work_area(position.x, position.y)
+            .unwrap_or((position.x, position.y, size.width, size.height)),
+    )
+}
+
+pub fn fit_window_to_work_area(app: &AppHandle, window: &WebviewWindow) {
+    if let Some((x, y, width, height)) = target_area(app) {
+        let _ = window.set_position(PhysicalPosition::new(x, y));
+        let _ = window.set_size(PhysicalSize::new(width, height));
+    }
+}
+
+pub fn start_work_area_watcher(app: AppHandle) {
+    let _ = std::thread::Builder::new()
+        .name("dokiii-work-area".into())
+        .spawn(move || {
+            let mut last = target_area(&app);
+            loop {
+                std::thread::sleep(Duration::from_millis(1500));
+                let current = target_area(&app);
+                if current != last {
+                    if let Some(window) = app.get_webview_window("main") {
+                        fit_window_to_work_area(&app, &window);
+                    }
+                    last = current;
+                }
+            }
+        });
 }

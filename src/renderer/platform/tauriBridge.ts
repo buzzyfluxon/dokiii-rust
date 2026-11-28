@@ -86,6 +86,9 @@ export function installTauriBridge(): boolean {
     getConfig: () => call('config_get'),
     saveConfig: (config) => call<void>('config_save', { config }),
     setAutoHide: (value) => call<void>('set_auto_hide', { value }),
+    setReplaceTaskbar: (enabled) => call<void>('set_replace_taskbar', { enabled }),
+    onTaskbarState: (callback) =>
+      subscribe<{ enabled: boolean; fullscreen: boolean; desktopVisible: boolean }>('taskbar:state', callback),
     getDisplays: () => call('get_displays'),
     getDesktopSize: () => call('get_desktop_size'),
     trimMemory: () => call<void>('trim_memory'),
