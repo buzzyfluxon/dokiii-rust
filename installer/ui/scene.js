@@ -58,12 +58,12 @@
 
   var dock = document.getElementById('mini-dock');
   var icons = [
-    { bg: 'linear-gradient(145deg,#5ac8fa,#0a84ff)', svg: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>' },
-    { bg: 'linear-gradient(145deg,#ff7aa8,#ff3b5c)', svg: '<path d="M9 18V6l10-2v12"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="16" r="2.2"/>' },
-    { logo: true },
-    { bg: 'linear-gradient(145deg,#9d8bff,#6446f0)', svg: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>' },
-    { bg: 'linear-gradient(145deg,#ffb347,#ff8a1f)', svg: '<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8 3v4M16 3v4"/>' },
-    { bg: 'linear-gradient(145deg,#4a5bd6,#2a2f7a)', svg: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>' }
+    'icons/terminal.png',
+    'icons/brave.png',
+    'logo.png',
+    'icons/spotify.png',
+    'icons/vscode.png',
+    'icons/github.png'
   ];
 
   var BASE = 44;
@@ -75,15 +75,10 @@
     el.className = 'tile';
     el.style.width = BASE + 'px';
     el.style.height = BASE + 'px';
-    if (icon.logo) {
-      var img = document.createElement('img');
-      img.src = 'logo.png';
-      img.draggable = false;
-      el.appendChild(img);
-    } else {
-      el.style.background = icon.bg;
-      el.innerHTML = '<svg viewBox="0 0 24 24">' + icon.svg + '</svg>';
-    }
+    var img = document.createElement('img');
+    img.src = icon;
+    img.draggable = false;
+    el.appendChild(img);
     dock.appendChild(el);
     return el;
   });
