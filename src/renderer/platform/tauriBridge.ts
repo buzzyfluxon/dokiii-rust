@@ -154,12 +154,37 @@ export function installTauriBridge(): boolean {
   let pending: { x: number; y: number } | null = null;
   let pendingTimer: ReturnType<typeof setTimeout> | null = null;
 
+  let debugHit = false;
+  const refreshDebug = () => {
+    void call<boolean>('get_debug_hit')
+      .then((on) => {
+        debugHit = Boolean(on);
+      })
+      .catch(() => {
+        debugHit = false;
+      });
+  };
+  refreshDebug();
+  setInterval(refreshDebug, 5000);
+
+  const describeHit = (x: number, y: number) => {
+    const parts = document
+      .elementsFromPoint(x, y)
+      .slice(0, 4)
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        const cls = typeof el.className === 'string' ? el.className : '';
+        return `${el.tagName.toLowerCase()}.${cls.split(' ').join('.')}[${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)}]`;
+      });
+    return `at=${Math.round(x)},${Math.round(y)} viewport=${window.innerWidth}x${window.innerHeight} stack=${parts.join(' > ')}`;
+  };
+
   const testHit = (x: number, y: number) => {
     lastTest = performance.now();
     const hit = isInteractive(x, y);
     if (hit === lastHit) return;
     lastHit = hit;
-    void call<void>('report_hit', { hit });
+    void call<void>('report_hit', { hit, info: debugHit ? describeHit(x, y) : null });
   };
 
   subscribe<CursorPayload>('dokiii://cursor', ({ x, y, down }) => {

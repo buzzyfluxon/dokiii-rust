@@ -46,6 +46,7 @@ fn target_area(app: &AppHandle) -> Option<(i32, i32, u32, u32)> {
 
 pub fn fit_window_to_work_area(app: &AppHandle, window: &WebviewWindow) {
     if let Some((x, y, width, height)) = target_area(app) {
+        crate::debuglog::log(&format!("fit {},{} {}x{}", x, y, width, height));
         let _ = window.set_position(PhysicalPosition::new(x, y));
         let _ = window.set_size(PhysicalSize::new(width, height));
     }

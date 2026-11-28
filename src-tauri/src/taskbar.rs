@@ -297,6 +297,7 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) {
         Some(found) => found,
         None => return,
     };
+    crate::debuglog::log(&format!("taskbar on, original state {}", original));
     if read_marker().is_none() {
         write_marker(original);
     }

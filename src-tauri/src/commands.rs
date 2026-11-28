@@ -100,8 +100,11 @@ pub fn get_displays(app: AppHandle) -> Vec<DisplayInfo> {
 }
 
 #[tauri::command]
-pub fn report_hit(state: State<AppState>, hit: bool) {
+pub fn report_hit(window: tauri::WebviewWindow, state: State<AppState>, hit: bool, info: Option<String>) {
     state.js_hit.store(hit, Ordering::Relaxed);
+    if let Some(info) = info {
+        crate::debuglog::log(&format!("hit={} from={} {}", hit, window.label(), info));
+    }
 }
 
 #[tauri::command]

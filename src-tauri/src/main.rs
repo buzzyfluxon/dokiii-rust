@@ -8,6 +8,7 @@ mod config;
 mod control_center;
 mod photos;
 mod cursor;
+mod debuglog;
 mod display;
 mod filesystem;
 mod icon;
@@ -55,6 +56,7 @@ fn main() {
             commands::get_desktop_size,
             commands::trim_memory,
             commands::report_hit,
+            debuglog::get_debug_hit,
             commands::set_modal_open,
             commands::set_popover_open,
             commands::app_ready,

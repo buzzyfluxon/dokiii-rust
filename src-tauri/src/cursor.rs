@@ -138,6 +138,21 @@ fn run(app: AppHandle) {
         let next = holding || wanted;
 
         if capturing != Some(next) {
+            crate::debuglog::log(&format!(
+                "capture={} cursor={},{} win={},{} {}x{} scale={} js_hit={} modal={} popover={} top={}",
+                next,
+                cx,
+                cy,
+                position.x,
+                position.y,
+                size.width,
+                size.height,
+                scale,
+                state.js_hit.load(Ordering::Relaxed),
+                state.modal.load(Ordering::Relaxed),
+                state.popover.load(Ordering::Relaxed),
+                crate::taskbar::wants_top()
+            ));
             capturing = Some(next);
             let _ = window.set_ignore_cursor_events(!next);
         }
