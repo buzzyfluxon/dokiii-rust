@@ -48,6 +48,7 @@ const App: React.FC = () => {
   const closeDokiiiApp = useConfigStore((s) => s.closeDokiiiApp);
   const closeOverlays = useConfigStore((s) => s.closeOverlays);
   const toggleDockHidden = useConfigStore((s) => s.toggleDockHidden);
+  const hideOverlays = useConfigStore((s) => Boolean(s.dock.replaceTaskbar) && !s.taskbarDesktopVisible);
   const setUpdaterStatus = useUpdaterStore((s) => s.setUpdaterStatus);
   const hydrateUpdater = useUpdaterStore((s) => s.hydrate);
 
@@ -159,9 +160,9 @@ const App: React.FC = () => {
         style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}
         onClick={handleContainerClick}
       >
-        {!isDokiiiAppOpen && <Halo />}
-        {!isDokiiiAppOpen && <DesktopWidgetsLayer />}
-        {!isDokiiiAppOpen && <MusicAmbient />}
+        {!isDokiiiAppOpen && !hideOverlays && <Halo />}
+        {!isDokiiiAppOpen && !hideOverlays && <DesktopWidgetsLayer />}
+        {!isDokiiiAppOpen && !hideOverlays && <MusicAmbient />}
         {!isDokiiiAppOpen && <Dock />}
         {!isDokiiiAppOpen && <SnowLayer />}
         {isWidgetLibraryOpen && <WidgetLibrary />}

@@ -40,9 +40,16 @@ Every version is on the [Releases page](https://github.com/buzzyfluxon/dokiii-ru
 
 ---
 
+## What's New in 2.3.1
+
+- **Dock shows on the home screen again** with Replace Windows Taskbar on. DOKIII was mistaking its own full-screen window for a full-screen app and hiding the dock.
+- **Clicks and hover.** Fixed clicks that did not reach the screen, jerky hover and magnification that stopped working with Replace Windows Taskbar on or after turning it off.
+- **Halo, music ambient and desktop widgets stay on the desktop** while the taskbar is replaced, so they no longer appear over your windows or block clicks in them.
+- **Lighter background work.** The taskbar check runs less often and no longer re-stacks the window when nothing changed.
+
 ## What's New in 2.3.0
 
-- **Replace Windows Taskbar.** A new switch in the Dock tab hides the Windows taskbar and keeps the dock above your windows. The dock steps out of the way over full-screen apps and games and comes back when they close. Desktop widgets stay on the desktop and do not float over your windows.
+- **Replace Windows Taskbar.** A new switch in the Dock tab hides the Windows taskbar and keeps the dock above your windows. The dock steps out of the way over full-screen apps and games and comes back when they close. Desktop widgets, Halo and music ambient stay on the desktop and do not float over your windows.
 - **Cleaner first run.** A fresh install now starts with an empty desktop, four dock apps with Windows names (File Explorer, Browser, Terminal, Settings), and Halo and snow turned off. Add widgets from the Widget Library when you want them. Existing setups keep their layout.
 - **Neutral colors.** The Quick Controls widget lost its purple glow. Its brightness slider, Wi-Fi and Bluetooth buttons now match the volume widget.
 - **One set of window buttons.** The Control Center no longer shows macOS-style dots next to the Windows minimize, maximize and close buttons.
@@ -129,7 +136,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.3.0`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
+The installer is written to `src-tauri/target/release/bundle/nsis`. Pushing a tag that starts with `v` (for example `v2.3.1`) builds it and publishes `DOKIII-Installer.exe` and `DOKIII-Setup.exe` through GitHub Actions. The setup window lives in `installer/`; the workflow copies `DOKIII-Setup.exe` into `installer/src-tauri/payload` and builds it with `cargo tauri build --no-bundle` from `installer/src-tauri`. See `docs/ARCHITECTURE.md` for how the pieces fit together.
 
 ---
 

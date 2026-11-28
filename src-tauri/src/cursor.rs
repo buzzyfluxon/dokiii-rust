@@ -1,4 +1,4 @@
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
@@ -39,6 +39,12 @@ fn primary_button_down() -> bool {
     false
 }
 
+static RESYNC: AtomicBool = AtomicBool::new(false);
+
+pub fn resync() {
+    RESYNC.store(true, Ordering::Relaxed);
+}
+
 pub fn start(app: AppHandle) {
     let _ = std::thread::Builder::new()
         .name("dokiii-cursor".into())
@@ -73,6 +79,11 @@ fn run(app: AppHandle) {
     loop {
         let idle = last_move.elapsed() > Duration::from_millis(1500);
         std::thread::sleep(Duration::from_millis(if idle { 50 } else { 16 }));
+
+        if RESYNC.swap(false, Ordering::Relaxed) {
+            capturing = None;
+            geometry = None;
+        }
 
         let window = match app.get_webview_window("main") {
             Some(window) => window,

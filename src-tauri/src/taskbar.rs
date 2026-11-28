@@ -46,10 +46,7 @@ mod sys {
     use windows::Win32::Graphics::Gdi::{
         GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
     };
-    use windows::Win32::UI::Shell::{
-        SHAppBarMessage, SHQueryUserNotificationState, APPBARDATA, QUNS_BUSY, QUNS_PRESENTATION_MODE,
-        QUNS_RUNNING_D3D_FULL_SCREEN,
-    };
+    use windows::Win32::UI::Shell::{SHAppBarMessage, APPBARDATA};
     use windows::Win32::UI::WindowsAndMessaging::{
         GetClassNameW, GetForegroundWindow, GetTopWindow, GetWindow, GetWindowLongW, GetWindowRect,
         GetWindowThreadProcessId, IsWindowVisible, ShowWindow, GWL_STYLE, GW_HWNDNEXT, SW_HIDE,
@@ -139,14 +136,6 @@ mod sys {
 
     pub fn foreground_fullscreen() -> bool {
         unsafe {
-            if let Ok(state) = SHQueryUserNotificationState() {
-                if state == QUNS_BUSY
-                    || state == QUNS_PRESENTATION_MODE
-                    || state == QUNS_RUNNING_D3D_FULL_SCREEN
-                {
-                    return true;
-                }
-            }
             let hwnd = GetForegroundWindow();
             if hwnd == HWND::default() || !IsWindowVisible(hwnd).as_bool() {
                 return false;
@@ -237,6 +226,7 @@ fn refit_later(app: &AppHandle) {
             if let Some(window) = app.get_webview_window("main") {
                 crate::display::fit_window_to_work_area(&app, &window);
             }
+            crate::cursor::resync();
         });
 }
 
@@ -245,25 +235,40 @@ fn apply_top(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.set_always_on_top(modal || crate::snow::front() || wants_top());
     }
+    crate::cursor::resync();
 }
 
 fn run(app: AppHandle, generation: u64) {
     let mut last: Option<TaskbarState> = None;
+    let mut last_top: Option<bool> = None;
+    let mut streak = 0u32;
     while ENABLED.load(Ordering::Relaxed) && GENERATION.load(Ordering::Relaxed) == generation {
         sys::hide_trays();
-        let fullscreen = sys::foreground_fullscreen();
-        FULLSCREEN.store(fullscreen, Ordering::Relaxed);
+        let seen = sys::foreground_fullscreen();
+        if seen != FULLSCREEN.load(Ordering::Relaxed) {
+            streak += 1;
+            if streak >= 2 {
+                FULLSCREEN.store(seen, Ordering::Relaxed);
+                streak = 0;
+            }
+        } else {
+            streak = 0;
+        }
+        let top = wants_top();
+        if last_top != Some(top) {
+            apply_top(&app);
+            last_top = Some(top);
+        }
         let state = TaskbarState {
             enabled: true,
-            fullscreen,
+            fullscreen: FULLSCREEN.load(Ordering::Relaxed),
             desktop_visible: crate::snow::desktop_visible(&app),
         };
         if last.as_ref() != Some(&state) {
-            apply_top(&app);
             let _ = app.emit("taskbar:state", state.clone());
             last = Some(state);
         }
-        std::thread::sleep(Duration::from_millis(300));
+        std::thread::sleep(Duration::from_millis(400));
     }
 }
 
